@@ -250,13 +250,19 @@
 
     <script>
         // 1. CARICA IL MENU A TENDINA
+        // Sostituisci la funzione vecchia con questa
         function caricaMenuOrari() {
             const dataScelta = document.getElementById('date').value;
             const selectTime = document.getElementById('time');
             
             if (!dataScelta) return;
 
-            selectTime.innerHTML = '<option>Caricamento...</option>';
+            // Controllo Giorno Chiusura Frontend (Opzionale ma carino per l'utente)
+            const dateObj = new Date(dataScelta);
+            const day = dateObj.getDay(); // 0=Dom, 1=Lun
+            
+            // Messaggio di caricamento
+            selectTime.innerHTML = '<option>Verifica disponibilità...</option>';
 
             fetch(`api_disponibilita.php?data=${dataScelta}`)
                 .then(response => response.json())
@@ -264,7 +270,12 @@
                     selectTime.innerHTML = ''; // Pulisci
                     
                     if (orari.length === 0) {
-                        selectTime.innerHTML = '<option value="">Nessun orario disponibile</option>';
+                        // Messaggio intelligente
+                        if (day === 0 || day === 1) { // 0=Domenica, 1=Lunedì
+                            selectTime.innerHTML = '<option value="">Siamo Chiusi in questo giorno</option>';
+                        } else {
+                            selectTime.innerHTML = '<option value="">Tutto esaurito / Nessuna disponibilità</option>';
+                        }
                         return;
                     }
 
@@ -287,6 +298,7 @@
                     selectTime.innerHTML = '<option>Errore caricamento</option>';
                 });
         }
+
 
         // 2. MESSAGGIO FEEDBACK
         function getParameterByName(name) {
