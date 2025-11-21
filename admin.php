@@ -1,5 +1,5 @@
 <?php
-// admin.php - VERSIONE 2.4 (TESTI INTUITIVI & LAYOUT A PILA)
+// admin.php - VERSIONE 3.3 (LOGICA UNIFICATA WHATSAPP + DB)
 session_start();
 date_default_timezone_set('Europe/Rome');
 
@@ -31,8 +31,10 @@ if (!isset($_SESSION['logged_in'])) {
           </div>'; exit;
 }
 
-// --- RECUPERO TAB ATTIVO ---
+// --- RECUPERO VARIABILI UI ---
 $active_tab = isset($_GET['current_tab']) ? $_GET['current_tab'] : 'inbox';
+$flow_id = isset($_GET['flow_id']) ? intval($_GET['flow_id']) : 0;
+$flow_step = isset($_GET['step']) ? $_GET['step'] : '';
 
 // --- HELPER LOG ---
 function aggiungiLog($conn, $id, $messaggio) {
@@ -43,33 +45,49 @@ function aggiungiLog($conn, $id, $messaggio) {
     $stmt->execute();
 }
 
-// --- AZIONI ---
-if (isset($_GET['action']) && isset($_GET['id'])) {
+// ============================================================
+//  LOGICA UNIFICATA DI GESTIONE AZIONI (IL CUORE DEL SISTEMA)
+// ============================================================
+if (isset($_GET['id']) && (isset($_GET['action']) || isset($_GET['track']))) {
     $id = intval($_GET['id']);
-    $stato = $_GET['action']; 
-    $conn->query("UPDATE prenotazioni SET stato='$stato' WHERE id=$id");
-    if ($stato == 'accettato') aggiungiLog($conn, $id, "✅ Accettato (DB)");
-    if ($stato == 'rifiutato') aggiungiLog($conn, $id, "❌ Rifiutato (DB)");
     
-    $qs = http_build_query(array_merge($_GET, ['action'=>null, 'id'=>null])); 
-    header("Location: admin.php?".$qs); exit;
-}
+    // 1. ESEGUIAMO AZIONE DB (Se presente)
+    if (isset($_GET['action'])) {
+        $stato = $_GET['action'];
+        $conn->query("UPDATE prenotazioni SET stato='$stato' WHERE id=$id");
+        
+        if ($stato == 'accettato') aggiungiLog($conn, $id, "✅ Accettato (DB)");
+        if ($stato == 'rifiutato') aggiungiLog($conn, $id, "❌ Rifiutato/Archiviato (DB)");
+        if ($stato == 'in_attesa') aggiungiLog($conn, $id, "🔄 Ripristinato in Attesa");
+    }
 
-if (isset($_GET['track']) && isset($_GET['id']) && isset($_GET['url'])) {
-    $id = intval($_GET['id']);
-    $tipo = $_GET['track'];
-    $url = base64_decode($_GET['url']);
-    $msg = match($tipo) { 
-        'wa_conf' => "Inviato WA Conferma", 
-        'wa_rej' => "Inviato WA Rifiuto", 
-        'wa_canc' => "Inviato WA Annullamento", 
-        'gcal' => "Aggiunto a Google Calendar", 
-        default => "" 
-    };
-    if ($msg) aggiungiLog($conn, $id, $msg);
-    header("Location: " . $url); exit;
-}
+    // 2. ESEGUIAMO REINDIRIZZAMENTO ESTERNO (Se presente URL)
+    if (isset($_GET['track']) && isset($_GET['url'])) {
+        $tipo = $_GET['track'];
+        $url_destinazione = base64_decode($_GET['url']);
+        
+        $msg = match($tipo) { 
+            'wa_conf' => "Inviato WA Conferma", 
+            'wa_rej' => "Inviato WA Rifiuto", 
+            'wa_canc' => "Inviato WA Annullamento", 
+            'gcal' => "Aggiunto a Google Calendar", 
+            default => "" 
+        };
+        if ($msg) aggiungiLog($conn, $id, $msg);
 
+        // REDIRECT A WHATSAPP/GOOGLE
+        header("Location: " . $url_destinazione);
+        exit;
+    }
+
+    // 3. SE NON C'È URL ESTERNO, TORNIAMO ALLA DASHBOARD PULITA
+    header("Location: admin.php?current_tab=$active_tab");
+    exit;
+}
+// ============================================================
+
+
+// --- FERIE ---
 if (isset($_POST['block_type'])) {
     $data = $_POST['data_blocco'];
     if ($_POST['block_type'] == 'single') {
@@ -85,12 +103,12 @@ if (isset($_POST['block_type'])) {
     }
     header("Location: admin.php?current_tab=tools"); exit;
 }
-
 if (isset($_GET['delete_block'])) {
     $conn->query("DELETE FROM slot_full WHERE id=".intval($_GET['delete_block']));
     header("Location: admin.php?current_tab=tools"); exit;
 }
 
+// --- MANUALE ---
 if (isset($_POST['manual_booking'])) {
     $nome = $conn->real_escape_string($_POST['nome']);
     $tel = $_POST['telefono']; $data = $_POST['data']; $ora = $_POST['ora']; $servizio = $_POST['servizio'];
@@ -98,9 +116,8 @@ if (isset($_POST['manual_booking'])) {
     header("Location: admin.php?current_tab=agenda"); exit;
 }
 
-// --- DATI E FILTRI ---
+// --- DATI ---
 $filter_date = isset($_GET['filter_date']) ? $_GET['filter_date'] : '';
-
 $sql_attesa = "SELECT * FROM prenotazioni WHERE stato='in_attesa'";
 $sql_agenda = "SELECT * FROM prenotazioni WHERE stato='accettato'";
 
@@ -116,9 +133,8 @@ $sql_agenda .= " ORDER BY data_appuntamento ASC, ora_appuntamento ASC";
 
 $res_attesa = $conn->query($sql_attesa);
 $res_agenda = $conn->query($sql_agenda);
-$res_storico = $conn->query("SELECT * FROM prenotazioni WHERE stato='rifiutato' OR (data_appuntamento < CURDATE()) ORDER BY data_appuntamento DESC LIMIT 50");
+$res_storico = $conn->query("SELECT * FROM prenotazioni WHERE stato='rifiutato' OR (data_appuntamento < CURDATE() AND stato='accettato') ORDER BY data_appuntamento DESC LIMIT 50");
 $slot_full = $conn->query("SELECT * FROM slot_full WHERE data_blocco >= CURDATE() ORDER BY data_blocco ASC LIMIT 50");
-
 $count_total_attesa = $conn->query("SELECT COUNT(*) as c FROM prenotazioni WHERE stato='in_attesa'")->fetch_assoc()['c'];
 ?>
 
@@ -134,34 +150,24 @@ $count_total_attesa = $conn->query("SELECT COUNT(*) as c FROM prenotazioni WHERE
         :root { --primary: #1C1C1C; --accent: #B8860B; --bg: #f4f7f6; --white: #ffffff; --green: #28a745; --red: #dc3545; --gray: #6c757d; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; color: #333; }
         
-        /* HEADER */
+        /* STILI BASE */
         .header { background: var(--primary); color: white; padding: 15px 20px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .header h1 { margin: 0; font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; }
         .logout { color: #ff6b6b; font-size: 0.9rem; font-weight: 600; text-decoration:none; }
-        
-        /* TABS */
-        .nav-tabs { display: flex; gap: 10px; padding: 15px 15px 0; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
-        .tab-btn { 
-            background: white; text-decoration: none; padding: 10px 20px; border-radius: 20px; 
-            font-weight: 600; color: var(--gray); box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            transition: 0.2s; flex-shrink: 0; display: inline-block;
-        }
+        .nav-tabs { display: flex; gap: 10px; padding: 15px 15px 0; overflow-x: auto; white-space: nowrap; }
+        .tab-btn { background: white; text-decoration: none; padding: 10px 20px; border-radius: 20px; font-weight: 600; color: var(--gray); box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s; flex-shrink: 0; display: inline-block; }
         .tab-btn.active { background: var(--accent); color: white; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(184, 134, 11, 0.3); }
         .badge-count { background: var(--red); color: white; padding: 2px 6px; border-radius: 50%; font-size: 0.7rem; margin-left: 5px; vertical-align: top; }
-        
-        /* FILTERS */
         .filter-bar { background: white; margin: 15px; padding: 15px; border-radius: 12px; display: flex; gap: 10px; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .filter-input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; }
         .btn-filter { background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
         .btn-reset { background: #eee; color: #333; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; text-decoration:none; display:inline-block; }
         
-        /* CONTENT */
         .tab-content { display: none; padding: 0 15px 15px; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* CARDS */
-        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
+        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; overflow: hidden; transition: 0.3s; }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .time-badge { background: #edf2f7; color: var(--primary); font-weight: 800; font-size: 1.1rem; padding: 5px 12px; border-radius: 8px; }
         .date-badge { font-size: 0.85rem; color: var(--gray); font-weight: 600; text-transform: uppercase; }
@@ -169,21 +175,26 @@ $count_total_attesa = $conn->query("SELECT COUNT(*) as c FROM prenotazioni WHERE
         .service-info { color: var(--gray); font-size: 0.95rem; margin-top: 5px; display: flex; align-items: center; gap: 5px; }
         .phone-link { color: var(--accent); font-weight: 600; margin-top: 5px; display: inline-block; text-decoration:none; }
         
-        /* ACTION BUTTONS - STACKED LAYOUT FOR LONG TEXT */
-        .actions-stack { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
-        .btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; border: none; cursor: pointer; width: 100%; text-decoration:none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .flow-step { margin-top: 20px; padding-top: 15px; border-top: 1px dashed #ddd; animation: fadeIn 0.3s; }
+        .step-title { font-size: 0.85rem; font-weight: 700; color: var(--gray); margin-bottom: 10px; display: block; text-transform: uppercase; }
+        .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .actions-stack { display: flex; flex-direction: column; gap: 10px; }
         
+        .btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; border: none; cursor: pointer; width: 100%; text-decoration:none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .btn-green { background: #e6f4ea; color: var(--green); border: 1px solid #c3e6cb; }
         .btn-red { background: #fce8e6; color: var(--red); border: 1px solid #f5c6cb; }
         .btn-blue { background: #e8f0fe; color: #1a73e8; border: 1px solid #d2e3fc; }
         .btn-wa { background: #dcf8c6; color: #075e54; border: 1px solid #c2eabd; }
-        
-        /* ADMIN FORMS */
+        .btn-disabled { pointer-events: none; opacity: 0.4; filter: grayscale(100%); cursor: not-allowed; }
+
         .admin-panel { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 5px; color: var(--gray); }
         input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
         .fab { position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; z-index: 900; text-decoration:none; }
+        .badge { padding: 5px 10px; border-radius: 15px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+        .badge-accettato { background: #d4edda; color: #155724; }
+        .badge-rifiutato { background: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
@@ -194,18 +205,10 @@ $count_total_attesa = $conn->query("SELECT COUNT(*) as c FROM prenotazioni WHERE
     </div>
 
     <div class="nav-tabs">
-        <a href="admin.php?current_tab=inbox" class="tab-btn <?php echo $active_tab=='inbox'?'active':''; ?>">
-            Da Confermare <?php if($count_total_attesa > 0) echo "<span class='badge-count'>$count_total_attesa</span>"; ?>
-        </a>
-        <a href="admin.php?current_tab=agenda" class="tab-btn <?php echo $active_tab=='agenda'?'active':''; ?>">
-            Agenda
-        </a>
-        <a href="admin.php?current_tab=tools" class="tab-btn <?php echo $active_tab=='tools'?'active':''; ?>">
-            Gestione & Ferie
-        </a>
-        <a href="admin.php?current_tab=history" class="tab-btn <?php echo $active_tab=='history'?'active':''; ?>">
-            Storico
-        </a>
+        <a href="admin.php?current_tab=inbox" class="tab-btn <?php echo $active_tab=='inbox'?'active':''; ?>">Da Confermare <?php if($count_total_attesa > 0) echo "<span class='badge-count'>$count_total_attesa</span>"; ?></a>
+        <a href="admin.php?current_tab=agenda" class="tab-btn <?php echo $active_tab=='agenda'?'active':''; ?>">Agenda</a>
+        <a href="admin.php?current_tab=tools" class="tab-btn <?php echo $active_tab=='tools'?'active':''; ?>">Gestione & Ferie</a>
+        <a href="admin.php?current_tab=history" class="tab-btn <?php echo $active_tab=='history'?'active':''; ?>">Storico</a>
     </div>
 
     <form class="filter-bar" method="GET" action="admin.php">
@@ -219,18 +222,31 @@ $count_total_attesa = $conn->query("SELECT COUNT(*) as c FROM prenotazioni WHERE
 
     <div id="inbox" class="tab-content <?php echo $active_tab=='inbox'?'active':''; ?>">
         <?php if($res_attesa->num_rows == 0): ?>
-            <div style="text-align:center; padding:50px 20px; color:#999;">
-                <i class="fas fa-check-circle" style="font-size:3rem; color:#ddd; margin-bottom:10px;"></i>
-                <p>Nessuna richiesta <?php echo $filter_date ? "per questa data" : "in attesa"; ?>.</p>
-            </div>
+            <div style="text-align:center; padding:50px 20px; color:#999;"><p>Nessuna richiesta.</p></div>
         <?php endif; ?>
 
         <?php while($row = $res_attesa->fetch_assoc()): 
             $tel = preg_replace('/[^0-9]/', '', $row['telefono']);
-            $wa_rej = base64_encode("https://wa.me/39$tel?text=" . urlencode("Ciao {$row['nome']}, purtroppo per quell'orario non riesco."));
-            $qs = "&current_tab=$active_tab" . ($filter_date ? "&filter_date=$filter_date" : "");
+            $row_date = date('d/m/Y', strtotime($row['data_appuntamento']));
+            
+            // Messaggi
+            $wa_conf_txt = "Ciao {$row['nome']}, confermo il tuo appuntamento per il $row_date alle {$row['ora_appuntamento']}. A presto, Matteo.";
+            $wa_rej_txt = "Ciao {$row['nome']}, purtroppo per quell'orario non ho disponibilità. Possiamo trovare un'altra data?";
+            
+            // Links (Nota: Qui 'action' e 'track' sono combinati nel link)
+            $wa_conf_link = base64_encode("https://wa.me/39$tel?text=" . urlencode($wa_conf_txt));
+            $wa_rej_link = base64_encode("https://wa.me/39$tel?text=" . urlencode($wa_rej_txt));
+            
+            $start = strtotime($row['data_appuntamento'].' '.$row['ora_appuntamento']);
+            $end = $start + 1800;
+            $gcal = base64_encode("https://calendar.google.com/calendar/render?action=TEMPLATE&text=Taglio+{$row['nome']}&dates=".date('Ymd\THis',$start)."/".date('Ymd\THis',$end)."&details=Tel:+$tel&src=leonardobonomi949@gmail.com");
+
+            $is_active_card = ($flow_id == $row['id']);
+            $current_step = $is_active_card ? $flow_step : 'start';
+            $base_url = "admin.php?current_tab=inbox" . ($filter_date ? "&filter_date=$filter_date" : "") . "&flow_id={$row['id']}";
         ?>
-        <div class="card" style="border-left: 5px solid var(--accent);">
+        
+        <div class="card" style="border-left: 5px solid <?php echo ($current_step=='start') ? 'var(--accent)' : (($current_step=='accept_flow') ? 'var(--green)' : 'var(--red)'); ?>;">
             <div class="card-header">
                 <span class="date-badge"><?php echo date('d M', strtotime($row['data_appuntamento'])); ?></span>
                 <span class="time-badge"><?php echo $row['ora_appuntamento']; ?></span>
@@ -239,56 +255,67 @@ $count_total_attesa = $conn->query("SELECT COUNT(*) as c FROM prenotazioni WHERE
             <div class="service-info"><i class="fas fa-cut"></i> <?php echo $row['servizio']; ?></div>
             <a href="tel:<?php echo $tel; ?>" class="phone-link"><i class="fas fa-phone"></i> <?php echo $row['telefono']; ?></a>
             
-            <div class="actions-stack">
-                <a href="admin.php?action=accettato&id=<?php echo $row['id']; ?><?php echo $qs; ?>" class="btn btn-green"><i class="fas fa-check"></i> Accetta</a>
-                <a href="admin.php?track=wa_rej&id=<?php echo $row['id']; ?>&url=<?php echo $wa_rej; ?>" class="btn btn-wa"><i class="fab fa-whatsapp"></i> Avvisa che non puoi</a>
-                <a href="admin.php?action=rifiutato&id=<?php echo $row['id']; ?><?php echo $qs; ?>" class="btn btn-red"><i class="fas fa-times"></i> Rifiuta e Archivia</a>
-            </div>
+            <?php if($current_step == 'start'): ?>
+                <div class="actions-grid" style="margin-top:20px;">
+                    <a href="<?php echo $base_url; ?>&step=accept_flow" class="btn btn-green"><i class="fas fa-check"></i> Accetta</a>
+                    <a href="<?php echo $base_url; ?>&step=reject_flow" class="btn btn-red"><i class="fas fa-times"></i> Rifiuta e Archivia</a>
+                </div>
+            
+            <?php elseif($current_step == 'accept_flow'): ?>
+                <div class="flow-step">
+                    <span class="step-title">Procedura Accettazione</span>
+                    <div class="actions-stack">
+                        <a href="admin.php?track=gcal&id=<?php echo $row['id']; ?>&url=<?php echo $gcal; ?>" target="_blank" class="btn btn-blue" onclick="enableStep3(<?php echo $row['id']; ?>)">
+                            <i class="far fa-calendar-plus"></i> Step 2: Aggiungi a Google Calendar
+                        </a>
+                        
+                        <a href="admin.php?action=accettato&id=<?php echo $row['id']; ?>&track=wa_conf&url=<?php echo $wa_conf_link; ?>" id="btn-step3-<?php echo $row['id']; ?>" class="btn btn-wa btn-disabled">
+                            <i class="fab fa-whatsapp"></i> Step 3: Conferma WhatsApp
+                        </a>
+                        <a href="<?php echo $base_url; ?>&step=start" style="text-align:center; color:#999; font-size:0.8rem; margin-top:5px;">Annulla e torna indietro</a>
+                    </div>
+                </div>
+
+            <?php elseif($current_step == 'reject_flow'): ?>
+                <div class="flow-step">
+                    <span class="step-title">Procedura Rifiuto</span>
+                    <div class="actions-stack">
+                        <a href="admin.php?action=rifiutato&id=<?php echo $row['id']; ?>&track=wa_rej&url=<?php echo $wa_rej_link; ?>" class="btn btn-wa">
+                            <i class="fab fa-whatsapp"></i> Declina Appuntamento WhatsApp
+                        </a>
+                        <a href="admin.php?action=rifiutato&id=<?php echo $row['id']; ?>" class="btn btn-red">
+                            <i class="fas fa-times"></i> Declina (Solo Archivia)
+                        </a>
+                        <a href="<?php echo $base_url; ?>&step=start" style="text-align:center; color:#999; font-size:0.8rem; margin-top:5px;">Annulla e torna indietro</a>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
         <?php endwhile; ?>
     </div>
 
     <div id="agenda" class="tab-content <?php echo $active_tab=='agenda'?'active':''; ?>">
         <?php if($res_agenda->num_rows == 0): ?>
-            <div style="text-align:center; padding:50px 20px; color:#999;">
-                <p>Nessun appuntamento <?php echo $filter_date ? "il ".date('d/m', strtotime($filter_date)) : "futuro"; ?>.</p>
-            </div>
+            <div style="text-align:center; padding:50px 20px; color:#999;"><p>Nessun appuntamento.</p></div>
         <?php endif; ?>
 
-        <?php 
-        $current_date = "";
-        while($row = $res_agenda->fetch_assoc()): 
-            $row_date = date('d/m/Y', strtotime($row['data_appuntamento']));
+        <?php while($row = $res_agenda->fetch_assoc()): 
             $tel = preg_replace('/[^0-9]/', '', $row['telefono']);
-            $wa_conf = base64_encode("https://wa.me/39$tel?text=" . urlencode("Ciao {$row['nome']}, confermo appuntamento per il $row_date alle {$row['ora_appuntamento']}."));
             $wa_canc = base64_encode("https://wa.me/39$tel?text=" . urlencode("Ciao {$row['nome']}, devo annullare l'appuntamento causa imprevisto."));
-            
-            $start = strtotime($row['data_appuntamento'].' '.$row['ora_appuntamento']);
-            $end = $start + 1800;
-            $gcal = base64_encode("https://calendar.google.com/calendar/render?action=TEMPLATE&text=Taglio+{$row['nome']}&dates=".date('Ymd\THis',$start)."/".date('Ymd\THis',$end)."&details=Tel:+$tel&src=leonardobonomi949@gmail.com");
-            
-            if($current_date != $row_date) {
-                echo "<h3 style='margin: 20px 0 10px; color:#888; font-size:0.9rem; border-bottom:1px solid #eee; padding-bottom:5px;'>$row_date</h3>";
-                $current_date = $row_date;
-            }
         ?>
         <div class="card" style="border-left: 5px solid var(--green);">
             <div class="card-header">
                 <span class="time-badge"><?php echo $row['ora_appuntamento']; ?></span>
                 <div style="font-size:0.8rem; color:#999;"><?php echo $row['log_azioni'] ? '<i class="fas fa-history"></i>' : ''; ?></div>
             </div>
-            <h3 class="client-name"><?php echo $row['nome']; ?></h3>
+            <h3 class="client-name"><?php echo $row['nome']; ?> - <?php echo date('d/m', strtotime($row['data_appuntamento'])); ?></h3>
             <div class="service-info"><?php echo $row['servizio']; ?></div>
-            
             <div class="actions-stack">
-                <a href="admin.php?track=wa_conf&id=<?php echo $row['id']; ?>&url=<?php echo $wa_conf; ?>" class="btn btn-wa"><i class="fab fa-whatsapp"></i> Conferma su WhatsApp</a>
-                <a href="admin.php?track=gcal&id=<?php echo $row['id']; ?>&url=<?php echo $gcal; ?>" class="btn btn-blue"><i class="far fa-calendar-plus"></i> Aggiungi a Google Calendar</a>
-                
                 <details style="width:100%; margin-top:10px;">
                     <summary style="color:var(--red); font-size:0.8rem; cursor:pointer; text-align:center; padding:10px;">Altre Opzioni / Annulla</summary>
                     <div class="actions-stack" style="margin-top:10px;">
-                        <a href="admin.php?track=wa_canc&id=<?php echo $row['id']; ?>&url=<?php echo $wa_canc; ?>" class="btn btn-wa"><i class="fab fa-whatsapp"></i> Invia Scuse WhatsApp</a>
-                        <a href="admin.php?action=rifiutato&id=<?php echo $row['id']; ?>" class="btn btn-red" onclick="return confirm('Sicuro?')">Declina Appuntamento</a>
+                        <a href="admin.php?track=wa_canc&id=<?php echo $row['id']; ?>&url=<?php echo $wa_canc; ?>" class="btn btn-wa"><i class="fab fa-whatsapp"></i> Declina WhatsApp</a>
+                        <a href="admin.php?action=rifiutato&id=<?php echo $row['id']; ?>" class="btn btn-red" onclick="return confirm('Sicuro?')">Declina e Archivia</a>
                     </div>
                 </details>
             </div>
@@ -307,10 +334,7 @@ $count_total_attesa = $conn->query("SELECT COUNT(*) as c FROM prenotazioni WHERE
                     <div style="display:flex; gap:10px;">
                         <input type="date" name="data" value="<?php echo date('Y-m-d'); ?>" required>
                         <select name="ora">
-                            <?php 
-                            $s=strtotime("08:00"); $e=strtotime("19:30");
-                            while($s<=$e){ echo "<option>".date("H:i",$s)."</option>"; $s=strtotime('+30 mins',$s); }
-                            ?>
+                            <?php $s=strtotime("08:00"); $e=strtotime("19:30"); while($s<=$e){ echo "<option>".date("H:i",$s)."</option>"; $s=strtotime('+30 mins',$s); } ?>
                         </select>
                     </div>
                 </div>
@@ -336,10 +360,7 @@ $count_total_attesa = $conn->query("SELECT COUNT(*) as c FROM prenotazioni WHERE
                 <div class="form-group" id="timeSelectGroup">
                     <label>Ora (se singolo):</label>
                     <select name="ora_blocco">
-                        <?php 
-                        $s=strtotime("08:00"); $e=strtotime("19:30");
-                        while($s<=$e){ echo "<option>".date("H:i",$s)."</option>"; $s=strtotime('+30 mins',$s); }
-                        ?>
+                        <?php $s=strtotime("08:00"); $e=strtotime("19:30"); while($s<=$e){ echo "<option>".date("H:i",$s)."</option>"; $s=strtotime('+30 mins',$s); } ?>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-red">Applica Blocco</button>
@@ -369,9 +390,11 @@ $count_total_attesa = $conn->query("SELECT COUNT(*) as c FROM prenotazioni WHERE
                     <span class="badge badge-<?php echo $row['stato']; ?>"><?php echo $row['stato']; ?></span>
                 </div>
                 <strong><?php echo $row['nome']; ?></strong>
-                <?php if($row['stato'] == 'rifiutato'): ?>
-                    <br><a href="admin.php?action=in_attesa&id=<?php echo $row['id']; ?>" style="font-size:0.8rem; color:blue;">Ripristina in attesa</a>
-                <?php endif; ?>
+                <div class="actions-stack" style="margin-top:10px;">
+                    <a href="admin.php?action=in_attesa&id=<?php echo $row['id']; ?>" class="btn btn-blue" onclick="return confirm('Vuoi ripristinare questa richiesta? Tornerà in Da Confermare.')">
+                        <i class="fas fa-undo"></i> Ripristina in Attesa
+                    </a>
+                </div>
             </div>
         <?php endwhile; ?>
     </div>
@@ -379,6 +402,16 @@ $count_total_attesa = $conn->query("SELECT COUNT(*) as c FROM prenotazioni WHERE
     <a href="admin.php?current_tab=tools&show_manual=1" class="fab"><i class="fas fa-plus"></i></a>
 
     <script>
+        function enableStep3(id) {
+            setTimeout(function() {
+                var btn = document.getElementById('btn-step3-' + id);
+                if(btn) {
+                    btn.classList.remove('btn-disabled');
+                    btn.innerHTML = '<i class="fab fa-whatsapp"></i> Step 3: Conferma WhatsApp';
+                }
+            }, 1000);
+        }
+
         const urlParams = new URLSearchParams(window.location.search);
         if(urlParams.has('show_manual')) {
             document.getElementById('manualForm').style.display = 'block';
