@@ -1,93 +1,63 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.matteocavallara.it/">
+    <meta property="og:title" content="Barba & Capelli Matteo Cavallara">
+    <meta property="og:description" content="Prenota il tuo taglio online. Tradizione e stile a Cerlongo.">
+    <meta property="og:image" content="https://www.matteocavallara.it/img/hero-bg.jpg"> <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.matteocavallara.it/">
+    <meta property="twitter:title" content="Barba & Capelli Matteo Cavallara">
+    <meta property="twitter:description" content="Prenota il tuo taglio online. Tradizione e stile a Cerlongo.">
+    <meta property="twitter:image" content="https://www.matteocavallara.it/img/hero-bg.jpg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <title>Barba & Capelli Matteo Cavallara</title>
     
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        /* --- VARIABILI & RESET --- */
+        /* STILI CSS */
         :root {
-            --col-primary: #A1B59C; /* Verde Salvia */
-            --col-secondary: #1C1C1C; /* Nero Antracite */
-            --col-accent: #B8860B; /* Rame/Oro Scuro */
-            --col-bg-light: #F5F5F0; /* Bianco Sporco */
-            --col-bg-texture: #EBEBEB; /* Grigio Cemento */
+            --col-primary: #A1B59C;
+            --col-secondary: #1C1C1C;
+            --col-accent: #B8860B;
+            --col-bg-light: #F5F5F0;
+            --col-bg-texture: #EBEBEB;
             --col-white: #FFFFFF;
-            
             --font-heading: 'Playfair Display', serif;
             --font-body: 'Lato', sans-serif;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: var(--font-body); color: var(--col-secondary); background-color: var(--col-bg-light); line-height: 1.6; }
         h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: 700; margin-bottom: 1rem; }
         a { text-decoration: none; color: inherit; transition: 0.3s; }
         ul { list-style: none; }
-
-        /* --- UTILITY --- */
         .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         .btn-cta {
-            display: inline-block;
-            background-color: var(--col-accent);
-            color: var(--col-white);
-            padding: 15px 35px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border: 2px solid var(--col-accent);
-            cursor: pointer;
+            display: inline-block; background-color: var(--col-accent); color: var(--col-white);
+            padding: 15px 35px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            border: 2px solid var(--col-accent); cursor: pointer;
         }
         .btn-cta:hover { background-color: transparent; color: var(--col-accent); }
         .section-padding { padding: 80px 0; }
         .section-title { text-align: center; font-size: 2.5rem; margin-bottom: 10px; color: var(--col-secondary); }
         .section-subtitle { text-align: center; font-style: italic; color: var(--col-accent); margin-bottom: 50px; display: block; }
-
-        /* --- HEADER --- */
-        header {
-            background-color: var(--col-secondary);
-            color: var(--col-white);
-            padding: 20px 0;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            border-bottom: 3px solid var(--col-accent);
-        }
+        header { background-color: var(--col-secondary); color: var(--col-white); padding: 20px 0; position: sticky; top: 0; z-index: 1000; border-bottom: 3px solid var(--col-accent); }
         nav { display: flex; justify-content: space-between; align-items: center; }
         .logo { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 900; letter-spacing: 1px; }
         .nav-links a { margin-left: 20px; font-size: 0.9rem; text-transform: uppercase; color: #ccc; }
         .nav-links a:hover { color: var(--col-accent); }
-
-        /* --- HERO SECTION --- */
-        .hero {
-            height: 90vh;
-            /* Qui carica la foto del salone dalla cartella img */
-            background: linear-gradient(rgba(28, 28, 28, 0.6), rgba(28, 28, 28, 0.4)), 
-                        url('img/hero-bg.jpg'); 
-            background-size: cover;
-            background-position: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: var(--col-white);
-        }
+        .hero { height: 90vh; background: linear-gradient(rgba(28, 28, 28, 0.6), rgba(28, 28, 28, 0.4)), url('img/hero-bg.jpg'); background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--col-white); }
         .hero-content h1 { font-size: 4rem; line-height: 1.1; margin-bottom: 20px; }
         .hero-content p { font-size: 1.5rem; font-weight: 300; margin-bottom: 40px; font-style: italic; }
-
-        /* --- FILOSOFIA --- */
         .philosophy { background-color: var(--col-bg-texture); }
         .philosophy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center; }
         .philosophy-img img { width: 100%; border: 5px solid var(--col-white); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-
-        /* --- SERVIZI --- */
         .services { background-color: var(--col-bg-light); }
         .service-category { margin-bottom: 40px; }
         .category-title { font-size: 1.8rem; color: var(--col-primary); border-bottom: 1px solid var(--col-accent); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; }
@@ -96,29 +66,24 @@
         .service-dots { flex-grow: 1; border-bottom: 1px dotted #999; margin: 0 10px; position: relative; top: -5px; }
         .service-price { font-weight: 700; color: var(--col-secondary); }
         .service-desc { font-size: 0.9rem; color: #666; margin-top: -10px; margin-bottom: 20px; font-style: italic; }
-
-        /* --- PRENOTA --- */
         .booking { background-color: var(--col-primary); color: var(--col-white); }
         .booking .section-title { color: var(--col-white); }
         .booking .section-subtitle { color: #e0e0e0; }
         .booking-form { background-color: var(--col-white); padding: 40px; max-width: 700px; margin: 0 auto; box-shadow: 0 15px 40px rgba(0,0,0,0.2); border-top: 5px solid var(--col-accent); }
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; color: var(--col-secondary); margin-bottom: 5px; font-weight: 700; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ddd; background-color: #f9f9f9; font-family: var(--font-body); }
-        .form-group input:focus { border-color: var(--col-accent); outline: none; }
-
-        /* --- CALENDARIO --- */
+        
+        /* Stile input e SELECT aggiornato */
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ddd; background-color: #f9f9f9; font-family: var(--font-body); font-size: 1rem; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--col-accent); outline: none; }
+        
         .calendar-section { background-color: var(--col-bg-light); text-align: center; }
         .calendar-container { border: 2px solid var(--col-accent); padding: 10px; background: white; display: inline-block; width: 100%; max-width: 800px; }
-
-        /* --- FOOTER --- */
         footer { background-color: var(--col-secondary); color: #ccc; text-align: center; padding: 50px 0; border-top: 5px solid var(--col-accent); }
         .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; text-align: left; max-width: 1000px; margin: 0 auto; }
         .footer-col h3 { color: var(--col-white); margin-bottom: 20px; font-size: 1.2rem; }
         .footer-col p, .footer-col li { margin-bottom: 10px; font-size: 0.95rem; }
         .social-icon { font-size: 1.5rem; color: var(--col-accent); margin-right: 10px; }
-        
-        /* --- MEDIA QUERIES --- */
         @media (max-width: 768px) {
             .hero-content h1 { font-size: 2.5rem; }
             .philosophy-grid { grid-template-columns: 1fr; }
@@ -175,43 +140,32 @@
             <span class="section-subtitle">Qualità e Trasparenza</span>
 
             <div class="services-list">
-                
                 <div class="service-category">
                     <h3 class="category-title">Taglio & Styling</h3>
-                    
                     <div class="service-item">
                         <span class="service-name">Taglio Semplice</span>
                         <span class="service-dots"></span>
                         <span class="service-price">€ 15,00</span>
                     </div>
-                    <div class="service-desc">Taglio a forbice o macchinetta, finitura pulita.</div>
-
                     <div class="service-item">
                         <span class="service-name">Taglio Sfumato (Fade)</span>
                         <span class="service-dots"></span>
                         <span class="service-price">€ 18,00</span>
                     </div>
-                    <div class="service-desc">Sfumatura tecnica di precisione.</div>
                 </div>
-
                 <div class="service-category">
                     <h3 class="category-title">Barba</h3>
-                    
                     <div class="service-item">
                         <span class="service-name">Modellatura Barba</span>
                         <span class="service-dots"></span>
                         <span class="service-price">€ 10,00</span>
                     </div>
-                    <div class="service-desc">Definizione linee e regolazione lunghezza.</div>
-
                     <div class="service-item">
                         <span class="service-name">Rasatura Completa</span>
                         <span class="service-dots"></span>
                         <span class="service-price">€ 15,00</span>
                     </div>
-                    <div class="service-desc">Rituale tradizionale con panno caldo.</div>
                 </div>
-
             </div>
         </div>
     </section>
@@ -225,20 +179,19 @@
                 
                 <div class="form-group">
                     <label for="date">Data Desiderata</label>
-                    <input type="date" id="date" name="date" required>
+                    <input type="date" id="date" name="date" required onchange="caricaMenuOrari()">
                 </div>
 
                 <div class="form-group">
-                    <label for="time">Fascia Oraria</label>
-                    <select id="time" name="time">
-                        <option value="mattina">Mattina (08:30 - 12:30)</option>
-                        <option value="pomeriggio">Pomeriggio (15:00 - 19:30)</option>
+                    <label for="time">Orario (30 min intervalli)</label>
+                    <select id="time" name="time" required>
+                        <option value="">-- Seleziona prima una data --</option>
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label for="service-desc">Dettagli Servizio</label>
-                    <textarea id="service-desc" name="service-desc" placeholder="Es: Taglio semplice martedì pomeriggio..." required></textarea>
+                    <textarea id="service-desc" name="service-desc" placeholder="Es: Taglio sfumato..." required></textarea>
                 </div>
 
                 <div class="form-group">
@@ -260,9 +213,8 @@
         <div class="container">
             <h2 class="section-title">Disponibilità</h2>
             <span class="section-subtitle">Verifica gli orari occupati in tempo reale</span>
-            
-            <div class="calendar-container">
-                <iframe src="https://calendar.google.com/calendar/embed?src=leonardobonomi949%40gmail.com&ctz=Europe%2FRome" style="border: 0" width="100%" height="450" frameborder="0" scrolling="no"></iframe>
+            <div class="calendar-container" style="position: relative; padding-bottom: 75%; height: 0; overflow: hidden; max-width: 800px; margin: 0 auto; border: 2px solid var(--col-accent);">
+                <iframe src="https://calendar.google.com/calendar/embed?src=leonardobonomi949%40gmail.com&ctz=Europe%2FRome" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" frameborder="0" scrolling="no"></iframe>
             </div>
         </div>
     </section>
@@ -270,49 +222,73 @@
     <footer id="contatti">
         <div class="container">
             <div class="footer-grid">
-                
                 <div class="footer-col">
                     <h3>Dove Siamo</h3>
-                    <p><i class="fas fa-map-marker-alt" style="color: var(--col-accent);"></i> Via Chiesa, 18</p>
-                    <p>46044 Cerlongo (MN)</p>
-                    <br>
-                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2789.5626334468655!2d10.6368113!3d45.2895187!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x478193611b34c5d1%3A0x400f6821085c196!2sVia%20Chiesa%2C%2018%2C%2046040%20Cerlongo%20MN!5e0!3m2!1sit!2sit!4v1700000000000" width="100%" height="200" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                    <p>Via Chiesa, 18, 46044 Cerlongo (MN)</p>
+                    <iframe src="https://maps.google.com/maps?q=Via+Chiesa+18+Cerlongo&t=&z=15&ie=UTF8&iwloc=&output=embed" width="100%" height="200" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
                 </div>
-
                 <div class="footer-col">
                     <h3>Orari Apertura</h3>
                     <ul>
-                        <li><strong>Lun:</strong> Chiuso</li>
-                        <li><strong>Mar:</strong> 08:00–12:30, 15:00–19:30</li>
-                        <li><strong>Mer:</strong> 08:30–18:30</li>
-                        <li><strong>Gio:</strong> 08:00–12:30, 15:00–19:30</li>
-                        <li><strong>Ven:</strong> 08:00–19:30</li>
-                        <li><strong>Sab:</strong> 08:00–18:30</li>
-                        <li><strong>Dom:</strong> Chiuso</li>
+                        <li>Mar-Gio: 08:00–12:30, 15:00–19:30</li>
+                        <li>Mer-Sab: 08:30–18:30 (Sab fino 18:30)</li>
+                        <li>Ven: 08:00–19:30</li>
+                        <li>Dom-Lun: Chiuso</li>
                     </ul>
                 </div>
-
                 <div class="footer-col">
                     <h3>Contatti</h3>
-                    <p><a href="tel:0376607445"><i class="fas fa-phone"></i> 0376 607445</a></p>
-                    <p><a href="mailto:leonardobonomi949@gmail.com"><i class="fas fa-envelope"></i> Scrivici via Email</a></p>
-                    <br>
-                    <a href="https://www.facebook.com/matteo.cavallara.9/" target="_blank">
-                        <i class="fab fa-facebook social-icon"></i> Seguici su Facebook
-                    </a>
+                    <p>0376 607445</p>
+                    <p>leonardobonomi949@gmail.com</p>
                 </div>
             </div>
-
             <div style="margin-top: 50px; font-size: 0.8rem; text-align: center; border-top: 1px solid #333; padding-top: 20px;">
-                © 2025 Matteo Cavallara Barber Shop. 
-                <br>
-                <a href="privacy.html" style="color: #999; text-decoration: underline;">Privacy Policy</a>
+                © 2025 Matteo Cavallara Barber Shop. <a href="privacy.html" style="color: #999;">Privacy Policy</a>
             </div>
         </div>
     </footer>
 
     <script>
-        // Legge se l'URL contiene "?status=success"
+        // 1. CARICA IL MENU A TENDINA
+        function caricaMenuOrari() {
+            const dataScelta = document.getElementById('date').value;
+            const selectTime = document.getElementById('time');
+            
+            if (!dataScelta) return;
+
+            selectTime.innerHTML = '<option>Caricamento...</option>';
+
+            fetch(`api_disponibilita.php?data=${dataScelta}`)
+                .then(response => response.json())
+                .then(orari => {
+                    selectTime.innerHTML = ''; // Pulisci
+                    
+                    if (orari.length === 0) {
+                        selectTime.innerHTML = '<option value="">Nessun orario disponibile</option>';
+                        return;
+                    }
+
+                    // Aggiungi opzione predefinita
+                    const defaultOpt = document.createElement('option');
+                    defaultOpt.value = "";
+                    defaultOpt.text = "-- Seleziona Orario --";
+                    selectTime.appendChild(defaultOpt);
+
+                    // Popola il menu
+                    orari.forEach(ora => {
+                        const opt = document.createElement('option');
+                        opt.value = ora;
+                        opt.text = ora;
+                        selectTime.appendChild(opt);
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    selectTime.innerHTML = '<option>Errore caricamento</option>';
+                });
+        }
+
+        // 2. MESSAGGIO FEEDBACK
         function getParameterByName(name) {
             const url = window.location.href;
             name = name.replace(/[\[\]]/g, '\\$&');
@@ -323,13 +299,11 @@
             return decodeURIComponent(results[2].replace(/\+/g, ' '));
         }
 
-        // Al caricamento della pagina
         window.onload = function() {
             const status = getParameterByName('status');
             const form = document.querySelector('.booking-form');
 
             if (status === 'success') {
-                // Crea messaggio successo
                 const msg = document.createElement('div');
                 msg.style.backgroundColor = '#A1B59C';
                 msg.style.color = 'white';
@@ -338,19 +312,11 @@
                 msg.style.textAlign = 'center';
                 msg.style.fontWeight = 'bold';
                 msg.style.border = '1px solid #B8860B';
-                msg.innerHTML = '<i class="fas fa-check-circle"></i> Grazie! La richiesta è stata registrata.<br>Ti risponderemo a breve per confermare.';
+                msg.innerHTML = '<i class="fas fa-check-circle"></i> Richiesta inviata! Ti confermeremo a breve.';
                 
-                // Inserisci messaggio
                 form.parentNode.insertBefore(msg, form);
-                
-                // Scroll al messaggio
                 msg.scrollIntoView({behavior: "smooth", block: "center"});
-                
-                // Pulisce l'URL
                 window.history.replaceState({}, document.title, window.location.pathname + "#prenota");
-            } 
-            else if (status === 'error') {
-                alert("C'è stato un errore tecnico. Per favore chiama in negozio.");
             }
         };
     </script>
