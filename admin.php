@@ -1,6 +1,10 @@
+
 <?php
 // admin.php
-
+$host = 'localhost';
+$db   = 'barber_shop';
+$user = 'root'; // Cambia con il tuo user (es. su hosting spesso è diverso)
+$pass = '';     // Cambia con la tua password
 // PROTEZIONE SEMPLICE (Cambia la password!)
 $password_segreta = "Matteo2025"; 
 session_start();

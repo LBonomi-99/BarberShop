@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <title>Barba & Capelli Matteo Cavallara</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -220,7 +221,7 @@
             <h2 class="section-title">Richiedi Appuntamento</h2>
             <span class="section-subtitle">Compila il modulo. Ti risponderò per confermare.</span>
 
-            <form class="booking-form" action="https://formspree.io/f/mrbjrzwk" method="POST">
+            <form class="booking-form" action="invia_prenotazione.php" method="POST">
                 
                 <div class="form-group">
                     <label for="date">Data Desiderata</label>
@@ -311,18 +312,23 @@
     </footer>
 
     <script>
-        document.getElementById('bookingForm').addEventListener('submit', function(e) {
-            e.preventDefault(); // Blocca l'invio reale
-            
-            const form = this;
-            const btn = form.querySelector('button');
-            const originalBtnText = btn.innerText;
-            
-            // Effetto caricamento
-            btn.innerText = "Invio in corso...";
-            btn.style.opacity = "0.7";
-            
-            setTimeout(() => {
+        // Legge se l'URL contiene "?status=success"
+        function getParameterByName(name) {
+            const url = window.location.href;
+            name = name.replace(/[\[\]]/g, '\\$&');
+            var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+                results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, ' '));
+        }
+
+        // Al caricamento della pagina
+        window.onload = function() {
+            const status = getParameterByName('status');
+            const form = document.querySelector('.booking-form');
+
+            if (status === 'success') {
                 // Crea messaggio successo
                 const msg = document.createElement('div');
                 msg.style.backgroundColor = '#A1B59C';
@@ -332,19 +338,21 @@
                 msg.style.textAlign = 'center';
                 msg.style.fontWeight = 'bold';
                 msg.style.border = '1px solid #B8860B';
-                msg.innerHTML = '<i class="fas fa-check-circle"></i> Grazie! La richiesta è stata inviata.<br>Ti risponderemo presto al numero indicato.';
+                msg.innerHTML = '<i class="fas fa-check-circle"></i> Grazie! La richiesta è stata registrata.<br>Ti risponderemo a breve per confermare.';
                 
-                // Inserisci messaggio e resetta
+                // Inserisci messaggio
                 form.parentNode.insertBefore(msg, form);
-                form.reset();
-                btn.innerText = originalBtnText;
-                btn.style.opacity = "1";
                 
                 // Scroll al messaggio
                 msg.scrollIntoView({behavior: "smooth", block: "center"});
                 
-            }, 1500);
-        });
+                // Pulisce l'URL
+                window.history.replaceState({}, document.title, window.location.pathname + "#prenota");
+            } 
+            else if (status === 'error') {
+                alert("C'è stato un errore tecnico. Per favore chiama in negozio.");
+            }
+        };
     </script>
 
 </body>
