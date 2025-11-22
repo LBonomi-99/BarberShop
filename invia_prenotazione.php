@@ -1,53 +1,78 @@
 <?php
-// invia_prenotazione.php
+// invia_prenotazione.php - VERSIONE CON VALIDAZIONE TESTO E SICUREZZA
+session_start();
 
-// 1. CONFIGURAZIONE
+// CONFIGURAZIONE
 $host = 'localhost';
 $db   = 'barber_shop';
 $user = 'root'; 
 $pass = '';     
 
-// Email del Barbiere (dove ricevere le notifiche)
 $email_barbiere = "leonardobonomi949@gmail.com"; 
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 $conn = new mysqli($host, $user, $pass, $db);
 
 if ($conn->connect_error) {
-    die("Connessione fallita: " . $conn->connect_error);
+    die("Connessione al database fallita: " . $conn->connect_error);
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Raccogliamo i dati
     $nome = $conn->real_escape_string($_POST['name']);
     $telefono = $conn->real_escape_string($_POST['phone']);
     $data = $conn->real_escape_string($_POST['date']);
-    $ora = $conn->real_escape_string($_POST['time']); // Ora arriva dal menu a tendina
-    $descrizione = $conn->real_escape_string($_POST['service-desc']);
+    $ora = $conn->real_escape_string($_POST['time']);
+    $descrizione = $conn->real_escape_string($_POST['service-desc']); // Pulisce SQL Injection base
 
-    // A. INSERIMENTO NEL DATABASE (Stato: in_attesa)
+    // --- 1. CONTROLLO LUNGHEZZA ---
+    if (strlen($descrizione) > 100) {
+        // Errore: Testo troppo lungo
+        header("Location: index.html?status=error_length#prenota");
+        exit;
+    }
+
+    // --- 2. CONTROLLO PAROLE OFFENSIVE (BLACKLIST) ---
+    // Aggiungi qui le parole che vuoi bloccare (tutto minuscolo)
+    $blacklist = ['parolaccia', 'insulto', 'stupido', 'scemo', 'truffa', 'spam', 'casino', 'frocio',  'puttana', 'cazzo', 'merda', 'stronzo', 'vaffanculo', 'bastardo', 'ignorante', 'idiota', 'troia', 'culattone', 'zecca', 'balordo', 'cretino']; 
+    
+    $testo_check = strtolower($descrizione);
+    foreach ($blacklist as $word) {
+        if (strpos($testo_check, $word) !== false) {
+            // Errore: Parola trovata
+            header("Location: index.html?status=error_badwords#prenota");
+            exit;
+        }
+    }
+
+    // --- 3. INSERIMENTO DATABASE ---
     $sql = "INSERT INTO prenotazioni (nome, telefono, data_appuntamento, ora_appuntamento, servizio, stato) 
             VALUES ('$nome', '$telefono', '$data', '$ora', '$descrizione', 'in_attesa')";
 
     if ($conn->query($sql) === TRUE) {
         
-        // B. INVIO EMAIL AL BARBIERE
-        $oggetto = "Nuova Richiesta Appuntamento: $nome";
-        $messaggio = "Hai ricevuto una nuova richiesta dal sito.\n\n";
-        $messaggio .= "Cliente: $nome\n";
-        $messaggio .= "Telefono: $telefono\n";
-        $messaggio .= "Data: " . date('d/m/Y', strtotime($data)) . "\n";
-        $messaggio .= "Ora: $ora\n";
-        $messaggio .= "Servizio: $descrizione\n\n";
-        $messaggio .= "Vai al pannello admin per accettare o rifiutare.";
+        // 4. INVIO EMAIL
+        $oggetto = "Nuova Prenotazione: $nome - $data $ora";
+        $messaggio = "Nuova richiesta dal sito web.\n\n";
+        $messaggio .= "Nome: $nome\n";
+        $messaggio .= "Tel: $telefono\n";
+        $messaggio .= "Data: $data alle $ora\n";
+        $messaggio .= "Servizio: $descrizione\n";
         
-        $headers = "From: Sito Web <noreply@matteocavallara.it>";
+        $headers = "From: Sito Web <noreply@matteocavallara.it>\r\n";
+        $headers .= "Reply-To: $email_barbiere\r\n";
+        $headers .= "X-Mailer: PHP/" . phpversion();
 
-        // Tenta l'invio della mail (funziona se il server è configurato, su XAMPP potrebbe non partire senza config)
+        // Invio mail (silenzioso per l'utente, loggato dal sistema)
         @mail($email_barbiere, $oggetto, $messaggio, $headers);
 
-        // Reindirizza al sito con successo
+        // Successo
         header("Location: index.html?status=success#prenota");
+
     } else {
-        echo "Errore: " . $sql . "<br>" . $conn->error;
+        echo "Errore Database: " . $conn->error;
     }
 }
 $conn->close();
