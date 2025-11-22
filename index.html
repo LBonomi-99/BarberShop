@@ -93,6 +93,20 @@
             .nav-links a { margin: 0 10px; }
             .footer-grid { text-align: center; }
         }
+        
+        /* STILE ERRORE VALIDAZIONE */
+        .error-message {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            border-radius: 4px;
+            display: none; /* Nascosto di default */
+            text-align: center;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -176,7 +190,7 @@
             <h2 class="section-title">Richiedi Appuntamento</h2>
             <span class="section-subtitle">Compila il modulo. Ti risponderò per confermare.</span>
 
-            <form class="booking-form" action="invia_prenotazione.php" method="POST">
+            <form class="booking-form" action="invia_prenotazione.php" method="POST" id="bookingForm">
                 
                 <div class="form-group">
                     <label for="date">Data Desiderata</label>
@@ -201,8 +215,11 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="phone">Telefono</label>
-                    <input type="tel" id="phone" name="phone" required>
+                    <label for="phone">Telefono (Mobile, per WhatsApp)</label>
+                    <input type="tel" id="phone" name="phone" placeholder="Es. 333 1234567" required>
+                    <div id="phoneError" class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i> Impossibile inviare: inserisci un numero di cellulare valido per WhatsApp (Es. 333...).
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-cta" style="width: 100%; border: none;">Invia Richiesta</button>
@@ -250,7 +267,45 @@
     </footer>
 
     <script>
-        // 1. CARICA MENU ORARI
+        // --- 1. VALIDAZIONE TELEFONO LATO CLIENTE ---
+        // Funzione che blocca l'invio se il numero non è un mobile valido
+        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            const phoneInput = document.getElementById('phone');
+            const errorDiv = document.getElementById('phoneError');
+            const phoneVal = phoneInput.value.replace(/\s/g, '').replace(/-/g, ''); // Rimuovi spazi e trattini
+
+            // REGEX ITALIAN MOBILE:
+            // - Può avere opzionalmente +39
+            // - Deve iniziare con 3
+            // - Deve essere lungo 9 o 10 cifre (dopo il prefisso int.)
+            // Esempio valido: 3331234567, +393331234567
+            // Esempio NON valido: 02123456 (fisso), 12345 (corto)
+            
+            // Pulizia prefisso internazionale per il controllo
+            let cleanNumber = phoneVal;
+            if (cleanNumber.startsWith('+39')) {
+                cleanNumber = cleanNumber.substring(3);
+            } else if (cleanNumber.startsWith('0039')) {
+                cleanNumber = cleanNumber.substring(4);
+            }
+
+            // Controlla: È un numero? Inizia con 3? Ha 10 cifre?
+            const isMobile = /^[3]\d{9}$/.test(cleanNumber);
+
+            if (!isMobile) {
+                e.preventDefault(); // BLOCCA L'INVIO
+                errorDiv.style.display = 'block'; // Mostra Errore Rosso
+                phoneInput.style.borderColor = 'red';
+                phoneInput.focus();
+                return false;
+            } else {
+                errorDiv.style.display = 'none'; // Nascondi Errore
+                phoneInput.style.borderColor = '#ddd';
+                // Se è valido, il form procede normalmente verso invia_prenotazione.php
+            }
+        });
+
+        // --- 2. CARICA MENU ORARI ---
         function caricaMenuOrari() {
             const dataScelta = document.getElementById('date').value;
             const selectTime = document.getElementById('time');
@@ -294,7 +349,7 @@
                 });
         }
 
-        // 2. MESSAGGIO FEEDBACK
+        // --- 3. MESSAGGIO FEEDBACK ---
         function getParameterByName(name) {
             const url = window.location.href;
             name = name.replace(/[\[\]]/g, '\\$&');
@@ -307,7 +362,7 @@
 
         window.onload = function() {
             const status = getParameterByName('status');
-            const form = document.querySelector('.booking-form');
+            const form = document.getElementById('bookingForm');
 
             if (status === 'success') {
                 const msg = document.createElement('div');
