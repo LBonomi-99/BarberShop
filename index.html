@@ -1,20 +1,24 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://www.matteocavallara.it/">
-    <meta property="og:title" content="Barba & Capelli Matteo Cavallara">
-    <meta property="og:description" content="Prenota il tuo taglio online. Tradizione e stile a Cerlongo.">
-    <meta property="og:image" content="https://www.matteocavallara.it/img/hero-bg.jpg"> <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://www.matteocavallara.it/">
-    <meta property="twitter:title" content="Barba & Capelli Matteo Cavallara">
-    <meta property="twitter:description" content="Prenota il tuo taglio online. Tradizione e stile a Cerlongo.">
-    <meta property="twitter:image" content="https://www.matteocavallara.it/img/hero-bg.jpg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Barba & Capelli Matteo Cavallara</title>
     
     <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.matteocavallara.it/">
+    <meta property="og:title" content="Barba & Capelli Matteo Cavallara">
+    <meta property="og:description" content="Prenota il tuo taglio online. Tradizione e stile a Cerlongo.">
+    <meta property="og:image" content="https://www.matteocavallara.it/img/hero-bg.jpg">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.matteocavallara.it/">
+    <meta property="twitter:title" content="Barba & Capelli Matteo Cavallara">
+    <meta property="twitter:description" content="Prenota il tuo taglio online. Tradizione e stile a Cerlongo.">
+    <meta property="twitter:image" content="https://www.matteocavallara.it/img/hero-bg.jpg">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
@@ -72,11 +76,8 @@
         .booking-form { background-color: var(--col-white); padding: 40px; max-width: 700px; margin: 0 auto; box-shadow: 0 15px 40px rgba(0,0,0,0.2); border-top: 5px solid var(--col-accent); }
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; color: var(--col-secondary); margin-bottom: 5px; font-weight: 700; }
-        
-        /* Stile input e SELECT aggiornato */
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ddd; background-color: #f9f9f9; font-family: var(--font-body); font-size: 1rem; }
         .form-group input:focus, .form-group select:focus { border-color: var(--col-accent); outline: none; }
-        
         .calendar-section { background-color: var(--col-bg-light); text-align: center; }
         .calendar-container { border: 2px solid var(--col-accent); padding: 10px; background: white; display: inline-block; width: 100%; max-width: 800px; }
         footer { background-color: var(--col-secondary); color: #ccc; text-align: center; padding: 50px 0; border-top: 5px solid var(--col-accent); }
@@ -249,29 +250,25 @@
     </footer>
 
     <script>
-        // 1. CARICA IL MENU A TENDINA
-        // Sostituisci la funzione vecchia con questa
+        // 1. CARICA MENU ORARI
         function caricaMenuOrari() {
             const dataScelta = document.getElementById('date').value;
             const selectTime = document.getElementById('time');
             
             if (!dataScelta) return;
 
-            // Controllo Giorno Chiusura Frontend (Opzionale ma carino per l'utente)
             const dateObj = new Date(dataScelta);
             const day = dateObj.getDay(); // 0=Dom, 1=Lun
             
-            // Messaggio di caricamento
             selectTime.innerHTML = '<option>Verifica disponibilità...</option>';
 
             fetch(`api_disponibilita.php?data=${dataScelta}`)
                 .then(response => response.json())
                 .then(orari => {
-                    selectTime.innerHTML = ''; // Pulisci
+                    selectTime.innerHTML = ''; 
                     
                     if (orari.length === 0) {
-                        // Messaggio intelligente
-                        if (day === 0 || day === 1) { // 0=Domenica, 1=Lunedì
+                        if (day === 0 || day === 1) {
                             selectTime.innerHTML = '<option value="">Siamo Chiusi in questo giorno</option>';
                         } else {
                             selectTime.innerHTML = '<option value="">Tutto esaurito / Nessuna disponibilità</option>';
@@ -279,13 +276,11 @@
                         return;
                     }
 
-                    // Aggiungi opzione predefinita
                     const defaultOpt = document.createElement('option');
                     defaultOpt.value = "";
                     defaultOpt.text = "-- Seleziona Orario --";
                     selectTime.appendChild(defaultOpt);
 
-                    // Popola il menu
                     orari.forEach(ora => {
                         const opt = document.createElement('option');
                         opt.value = ora;
@@ -298,7 +293,6 @@
                     selectTime.innerHTML = '<option>Errore caricamento</option>';
                 });
         }
-
 
         // 2. MESSAGGIO FEEDBACK
         function getParameterByName(name) {
