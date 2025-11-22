@@ -223,8 +223,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="name">Nome e Cognome</label>
-                    <input type="text" id="name" name="name" required>
+                    <label for="name">Nome e Cognome (Max 40 caratteri)</label>
+                    <input type="text" id="name" name="name" required maxlength="40">
                 </div>
 
                 <div class="form-group">
@@ -280,17 +280,15 @@
     </footer>
 
     <script>
-        // 1. AGGIORNAMENTO CONTATORE CARATTERI
         function updateCount(field) {
             const count = field.value.length;
             document.getElementById('charCount').innerText = count + "/100";
         }
 
-        // 2. VALIDAZIONI AL SUBMIT (Telefono + Parole Vietate)
         document.getElementById('bookingForm').addEventListener('submit', function(e) {
             let valid = true;
 
-            // A. CONTROLLO TELEFONO
+            // A. VALIDAZIONE TELEFONO
             const phoneInput = document.getElementById('phone');
             const phoneError = document.getElementById('phoneError');
             const phoneVal = phoneInput.value.replace(/\s/g, '').replace(/-/g, '');
@@ -309,12 +307,11 @@
                 phoneInput.style.borderColor = '#ddd';
             }
 
-            // B. CONTROLLO PAROLE VIETATE
+            // B. VALIDAZIONE PAROLE
             const descInput = document.getElementById('service-desc');
             const textError = document.getElementById('textError');
             const textVal = descInput.value.toLowerCase();
-            // Lista base di parole da bloccare
-            const blacklist = ['parolaccia', 'insulto', 'stupido', 'scemo', 'truffa', 'spam', 'casino', 'frocio',  'puttana', 'cazzo', 'merda', 'stronzo', 'vaffanculo', 'bastardo', 'ignorante', 'idiota', 'troia', 'culattone', 'zecca', 'balordo', 'cretino']; 
+            const blacklist = ['parolaccia', 'insulto', 'stupido', 'scemo', 'truffa', 'spam', 'casino']; 
             
             let hasBadWords = false;
             for (let word of blacklist) {
@@ -325,7 +322,7 @@
             }
 
             if (hasBadWords) {
-                e.preventDefault(); // Blocca
+                e.preventDefault();
                 textError.style.display = 'block';
                 descInput.style.borderColor = 'red';
                 valid = false;
@@ -337,7 +334,6 @@
             return valid;
         });
 
-        // 3. CARICA MENU ORARI
         function caricaMenuOrari() {
             const dataScelta = document.getElementById('date').value;
             const selectTime = document.getElementById('time');
@@ -381,7 +377,6 @@
                 });
         }
 
-        // 4. GESTIONE MESSAGGI DAL SERVER
         function getParameterByName(name) {
             const url = window.location.href;
             name = name.replace(/[\[\]]/g, '\\$&');
@@ -412,10 +407,16 @@
                 window.history.replaceState({}, document.title, window.location.pathname + "#prenota");
             }
             else if (status === 'error_length') {
-                alert("Errore: Il testo dei dettagli è troppo lungo (Max 100 caratteri).");
+                alert("Errore: Testo troppo lungo.");
             }
             else if (status === 'error_badwords') {
-                alert("Errore: Il testo contiene parole non consentite.");
+                alert("Errore: Testo non consentito.");
+            }
+            else if (status === 'error_name_len') {
+                alert("Errore: Nome troppo lungo (Max 40 caratteri).");
+            }
+            else if (status === 'error_limit') {
+                alert("ATTENZIONE: Hai raggiunto il numero massimo di prenotazioni giornaliere (2) per questo numero di telefono.");
             }
         };
     </script>
