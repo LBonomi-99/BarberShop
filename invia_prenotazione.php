@@ -40,7 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // --- 3. CONTROLLO PAROLE OFFENSIVE (BLACKLIST) ---
-    $blacklist = ['parolaccia', 'insulto', 'stupido', 'scemo', 'truffa', 'spam', 'casino']; 
+    $blacklist = ['parolaccia', 'insulto', 'stupido', 'scemo', 'truffa', 'spam', 'casino', 'troia', 'cazzo', 'merda', 'stronzo', 'vaffanculo', 'bastardo', 'ignorante', 'idiota', 'culattone', 'zecca', 'balordo', 'cretino'];  
     $testo_check = strtolower($descrizione);
     foreach ($blacklist as $word) {
         if (strpos($testo_check, $word) !== false) {

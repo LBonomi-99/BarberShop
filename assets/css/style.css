@@ -1,0 +1,92 @@
+/* STILI CSS - Main Stylesheet */
+:root {
+    --col-primary: #A1B59C;
+    --col-secondary: #1C1C1C;
+    --col-accent: #B8860B;
+    --col-bg-light: #F5F5F0;
+    --col-bg-texture: #EBEBEB;
+    --col-white: #FFFFFF;
+    --font-heading: 'Playfair Display', serif;
+    --font-body: 'Lato', sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-body); color: var(--col-secondary); background-color: var(--col-bg-light); line-height: 1.6; }
+h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: 700; margin-bottom: 1rem; }
+a { text-decoration: none; color: inherit; transition: 0.3s; }
+ul { list-style: none; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+.btn-cta {
+    display: inline-block; background-color: var(--col-accent); color: var(--col-white);
+    padding: 15px 35px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+    border: 2px solid var(--col-accent); cursor: pointer;
+}
+.btn-cta:hover { background-color: transparent; color: var(--col-accent); }
+.section-padding { padding: 80px 0; }
+.section-title { text-align: center; font-size: 2.5rem; margin-bottom: 10px; color: var(--col-secondary); }
+.section-subtitle { text-align: center; font-style: italic; color: var(--col-accent); margin-bottom: 50px; display: block; }
+header { background-color: var(--col-secondary); color: var(--col-white); padding: 20px 0; position: sticky; top: 0; z-index: 1000; border-bottom: 3px solid var(--col-accent); }
+nav { display: flex; justify-content: space-between; align-items: center; }
+.logo { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 900; letter-spacing: 1px; }
+.nav-links a { margin-left: 20px; font-size: 0.9rem; text-transform: uppercase; color: #ccc; }
+.nav-links a:hover { color: var(--col-accent); }
+.hero { height: 90vh; background: linear-gradient(rgba(28, 28, 28, 0.6), rgba(28, 28, 28, 0.4)), url('../../img/hero-bg.jpg'); background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--col-white); }
+/* Nota: il percorso dell'immagine hero è stato aggiornato con ../../ per uscire dalla cartella css */
+
+.hero-content h1 { font-size: 4rem; line-height: 1.1; margin-bottom: 20px; }
+.hero-content p { font-size: 1.5rem; font-weight: 300; margin-bottom: 40px; font-style: italic; }
+.philosophy { background-color: var(--col-bg-texture); }
+.philosophy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center; }
+.philosophy-img img { width: 100%; border: 5px solid var(--col-white); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+.services { background-color: var(--col-bg-light); }
+.service-category { margin-bottom: 40px; }
+.category-title { font-size: 1.8rem; color: var(--col-primary); border-bottom: 1px solid var(--col-accent); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; }
+.service-item { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 15px; }
+.service-name { font-weight: 700; background-color: var(--col-bg-light); padding-right: 10px; z-index: 1; }
+.service-dots { flex-grow: 1; border-bottom: 1px dotted #999; margin: 0 10px; position: relative; top: -5px; }
+.service-price { font-weight: 700; color: var(--col-secondary); }
+.service-desc { font-size: 0.9rem; color: #666; margin-top: -10px; margin-bottom: 20px; font-style: italic; }
+.booking { background-color: var(--col-primary); color: var(--col-white); }
+.booking .section-title { color: var(--col-white); }
+.booking .section-subtitle { color: #e0e0e0; }
+.booking-form { background-color: var(--col-white); padding: 40px; max-width: 700px; margin: 0 auto; box-shadow: 0 15px 40px rgba(0,0,0,0.2); border-top: 5px solid var(--col-accent); }
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; color: var(--col-secondary); margin-bottom: 5px; font-weight: 700; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ddd; background-color: #f9f9f9; font-family: var(--font-body); font-size: 1rem; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--col-accent); outline: none; }
+
+.calendar-section { background-color: var(--col-bg-light); text-align: center; }
+.calendar-container { border: 2px solid var(--col-accent); padding: 10px; background: white; display: inline-block; width: 100%; max-width: 800px; }
+footer { background-color: var(--col-secondary); color: #ccc; text-align: center; padding: 50px 0; border-top: 5px solid var(--col-accent); }
+.footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; text-align: left; max-width: 1000px; margin: 0 auto; }
+.footer-col h3 { color: var(--col-white); margin-bottom: 20px; font-size: 1.2rem; }
+.footer-col p, .footer-col li { margin-bottom: 10px; font-size: 0.95rem; }
+.social-icon { font-size: 1.5rem; color: var(--col-accent); margin-right: 10px; }
+@media (max-width: 768px) {
+    .hero-content h1 { font-size: 2.5rem; }
+    .philosophy-grid { grid-template-columns: 1fr; }
+    nav { flex-direction: column; }
+    .nav-links { margin-top: 15px; }
+    .nav-links a { margin: 0 10px; }
+    .footer-grid { text-align: center; }
+}
+
+/* ERRORI */
+.error-message {
+    color: #dc3545;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    display: none;
+    text-align: center;
+    font-weight: bold;
+}
+
+.char-count {
+    font-size: 0.8rem;
+    color: #666;
+    text-align: right;
+    margin-top: 2px;
+}
