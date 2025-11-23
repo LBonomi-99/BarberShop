@@ -29,22 +29,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // --- 1. CONTROLLO LUNGHEZZA NOME (Max 40) ---
     if (strlen($nome) > 40) {
-        header("Location: index.html?status=error_name_len#prenota");
+        header("Location: index.php?status=error_name_len#prenota");
         exit;
     }
 
     // --- 2. CONTROLLO LUNGHEZZA DETTAGLI (Max 100 - Già presente) ---
     if (strlen($descrizione) > 100) {
-        header("Location: index.html?status=error_length#prenota");
+        header("Location: index.php?status=error_length#prenota");
         exit;
     }
 
     // --- 3. CONTROLLO PAROLE OFFENSIVE (BLACKLIST) ---
-    $blacklist = ['parolaccia', 'insulto', 'stupido', 'scemo', 'truffa', 'spam', 'casino']; 
+    $blacklist = ['parolaccia', 'insulto', 'stupido', 'scemo', 'truffa', 'spam', 'casino', 'troia', 'cazzo', 'merda', 'stronzo', 'vaffanculo', 'bastardo', 'ignorante', 'idiota', 'culattone', 'zecca', 'balordo', 'cretino'];  
     $testo_check = strtolower($descrizione);
     foreach ($blacklist as $word) {
         if (strpos($testo_check, $word) !== false) {
-            header("Location: index.html?status=error_badwords#prenota");
+            header("Location: index.php?status=error_badwords#prenota");
             exit;
         }
     }
@@ -57,7 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($row_limit['totale'] >= 2) {
         // Errore: Limite raggiunto
-        header("Location: index.html?status=error_limit#prenota");
+        header("Location: index.php?status=error_limit#prenota");
         exit;
     }
 
@@ -81,7 +81,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         @mail($email_barbiere, $oggetto, $messaggio, $headers);
 
-        header("Location: index.html?status=success#prenota");
+        header("Location: index.php?status=success#prenota");
 
     } else {
         echo "Errore Database: " . $conn->error;
