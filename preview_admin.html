@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Preview — Admin BarberShop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --primary:#1C1C1C; --accent:#B8860B; --bg:#f4f7f6; --white:#fff; --green:#28a745; --red:#dc3545; --gray:#6c757d; --spring:cubic-bezier(0.25,0.46,0.45,0.94); }
+        *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:'Outfit',sans-serif; background:var(--bg); padding-bottom:90px; color:#333; }
+
+        .header { background:var(--primary); color:white; padding:14px 20px; position:sticky; top:0; z-index:100; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 10px rgba(0,0,0,0.12); }
+        .header h1 { margin:0; font-size:1.15rem; font-weight:800; letter-spacing:1px; }
+
+        .nav-tabs { display:flex; gap:8px; padding:14px 14px 0; overflow-x:auto; white-space:nowrap; scrollbar-width:none; }
+        .tab-btn { background:white; text-decoration:none; padding:9px 18px; border-radius:20px; font-weight:600; color:var(--gray); box-shadow:0 2px 5px rgba(0,0,0,0.05); transition:all 0.2s; flex-shrink:0; display:inline-block; font-size:0.88rem; cursor:pointer; border:none; font-family:inherit; }
+        .tab-btn.active { background:var(--accent); color:white; transform:translateY(-2px); box-shadow:0 4px 12px rgba(184,134,11,0.3); }
+        .badge-count { background:var(--red); color:white; padding:2px 6px; border-radius:50%; font-size:0.68rem; margin-left:5px; vertical-align:top; }
+
+        .tab-content { display:none; padding:14px; animation:fadeIn 0.25s; }
+        .tab-content.active { display:block; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+        .card { background:white; border-radius:12px; padding:20px; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+        .card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+        .client-name { font-size:1.05rem; font-weight:700; margin:0; color:var(--primary); }
+
+        .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:11px 20px; border-radius:50px; font-weight:600; font-size:0.88rem; cursor:pointer; text-decoration:none; border:none; font-family:inherit; transition:all 0.2s; }
+        .btn-green { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
+        .btn-red   { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
+
+        .form-group { margin-bottom:14px; }
+        .form-group label { display:block; font-size:0.82rem; font-weight:700; margin-bottom:5px; color:var(--gray); }
+        input, select, textarea { width:100%; padding:11px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:0.95rem; font-family:inherit; color:#333; }
+
+        /* BENTO DASHBOARD */
+        .bento-grid { display:grid; grid-template-columns:2fr 1fr; gap:14px; }
+        .bento-tall { grid-row:span 2; }
+        .bento-card { background:white; border-radius:12px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.05); border:1px solid rgba(0,0,0,0.04); }
+        .bc-label { font-size:0.76rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--gray); margin-bottom:12px; display:block; }
+        .bc-number { font-size:3.2rem; font-weight:800; color:var(--primary); line-height:1; font-variant-numeric:tabular-nums; }
+        .bc-delta { font-size:0.88rem; font-weight:600; margin-top:10px; }
+        .bc-delta.up { color:#28a745; }
+        .bar-chart { margin-top:10px; }
+        .bar-row { display:flex; align-items:center; gap:10px; margin-bottom:7px; }
+        .bar-label { font-size:0.78rem; font-weight:600; color:var(--gray); width:28px; flex-shrink:0; }
+        .bar-track { flex-grow:1; background:#f0f0f0; border-radius:4px; height:10px; overflow:hidden; }
+        .bar-fill { height:100%; background:var(--accent); border-radius:4px; }
+        .bar-count { font-size:0.78rem; color:var(--gray); width:20px; text-align:right; flex-shrink:0; }
+        .circle-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12px 0; }
+        .circle-pct { font-size:1.9rem; font-weight:800; color:var(--primary); margin-top:10px; }
+        .circle-sub { font-size:0.78rem; color:var(--gray); margin-top:4px; }
+        .top-list { list-style:none; margin-top:6px; }
+        .top-list li { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid #f0f0f0; }
+        .top-list li:last-child { border:none; }
+        .top-ora { font-weight:700; font-size:0.9rem; color:var(--primary); width:42px; flex-shrink:0; }
+        .top-bar { flex-grow:1; background:#f0f0f0; border-radius:3px; height:6px; overflow:hidden; }
+        .top-bar-fill { height:100%; background:var(--accent); border-radius:3px; }
+        .top-cnt { font-size:0.78rem; color:var(--gray); width:16px; text-align:right; }
+
+        /* WEEK CALENDAR */
+        .view-toggle { display:flex; gap:8px; margin-bottom:12px; }
+        .view-btn { padding:8px 18px; border-radius:20px; font-weight:600; cursor:pointer; border:1px solid #e2e8f0; background:white; color:var(--gray); font-family:inherit; font-size:0.87rem; }
+        .view-btn.active { background:var(--accent); color:white; border-color:var(--accent); }
+        .week-nav { display:flex; align-items:center; justify-content:space-between; background:white; padding:11px 16px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.05); margin-bottom:12px; }
+        .week-nav span { font-weight:700; font-size:0.9rem; color:var(--primary); }
+        .week-nav button { background:#eee; border:none; border-radius:50%; width:30px; height:30px; cursor:pointer; font-size:0.75rem; display:flex; align-items:center; justify-content:center; }
+        .week-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
+        .week-day { background:white; border-radius:10px; padding:10px 7px; min-height:80px; box-shadow:0 2px 5px rgba(0,0,0,0.04); }
+        .week-day.today .week-day-date { color:var(--accent); }
+        .week-day-header { font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--gray); margin-bottom:4px; text-align:center; }
+        .week-day-date { text-align:center; font-weight:800; font-size:1rem; color:var(--primary); margin-bottom:6px; }
+        .appt-badge { background:#d4edda; color:#155724; font-size:0.67rem; padding:3px 5px; border-radius:4px; margin-bottom:3px; cursor:pointer; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+        /* HOURS TABLE */
+        .hours-table { width:100%; border-collapse:collapse; }
+        .hours-table th { text-align:left; padding:8px 10px; font-size:0.78rem; font-weight:700; color:var(--gray); text-transform:uppercase; border-bottom:2px solid #eee; }
+        .hours-table td { padding:8px 10px; vertical-align:middle; font-size:0.9rem; border-bottom:1px solid #f5f5f5; }
+        .hours-table input[type="time"] { width:auto; padding:7px 8px; font-size:0.85rem; }
+        .hours-table input[type="checkbox"] { width:auto; }
+        .day-closed td:not(:first-child):not(:nth-child(2)) input { opacity:0.3; pointer-events:none; }
+
+        /* INBOX CARDS */
+        .time-badge { background:#edf2f7; color:var(--primary); font-weight:800; font-size:1rem; padding:5px 12px; border-radius:8px; }
+        .date-badge { font-size:0.82rem; color:var(--gray); font-weight:600; text-transform:uppercase; }
+        .service-info { color:var(--gray); font-size:0.92rem; margin-top:4px; display:flex; align-items:center; gap:5px; }
+        .phone-link { color:var(--accent); font-weight:600; margin-top:5px; display:inline-block; font-size:0.92rem; text-decoration:none; }
+        .actions-stack { display:flex; flex-direction:column; gap:10px; align-items:center; margin-top:14px; }
+        .badge { padding:4px 10px; border-radius:14px; font-size:0.72rem; font-weight:700; text-transform:uppercase; }
+        .badge-accettato { background:#d4edda; color:#155724; }
+        .badge-rifiutato { background:#f8d7da; color:#721c24; }
+        .badge-attesa    { background:#fff3cd; color:#856404; }
+
+        @media (max-width:600px) {
+            .bento-grid { grid-template-columns:1fr; }
+            .bento-tall { grid-row:auto; }
+            .week-grid  { gap:4px; }
+            .week-day   { padding:6px 4px; min-height:60px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>BarberAdmin <i class="fas fa-cut" style="font-size:0.75em;color:var(--accent);"></i></h1>
+    <a href="#" style="color:#ff6b6b;font-size:0.88rem;font-weight:600;"><i class="fas fa-sign-out-alt"></i></a>
+</div>
+
+<div class="nav-tabs">
+    <button class="tab-btn active" onclick="showTab('dashboard',this)"><i class="fas fa-chart-bar" style="font-size:0.8em;"></i> Dashboard</button>
+    <button class="tab-btn" onclick="showTab('inbox',this)">Da Confermare <span class="badge-count">3</span></button>
+    <button class="tab-btn" onclick="showTab('agenda',this)">Agenda</button>
+    <button class="tab-btn" onclick="showTab('tools',this)">Gestione</button>
+    <button class="tab-btn" onclick="showTab('cms',this)">Contenuti</button>
+    <button class="tab-btn" onclick="showTab('history',this)">Storico</button>
+</div>
+
+<!-- TAB DASHBOARD -->
+<div id="tab-dashboard" class="tab-content active">
+    <div class="bento-grid">
+
+        <!-- CARD GRANDE -->
+        <div class="bento-card bento-tall">
+            <span class="bc-label">Prenotazioni accettate &mdash; questo mese</span>
+            <div class="bc-number" id="countEl">0</div>
+            <div class="bc-delta up"><i class="fas fa-arrow-up"></i> +4 rispetto al mese scorso</div>
+
+            <hr style="border:none;border-top:1px solid #f0f0f0;margin:20px 0;">
+
+            <span class="bc-label">Prenotazioni per giorno</span>
+            <div class="bar-chart">
+                <div class="bar-row"><span class="bar-label">Lun</span><div class="bar-track"><div class="bar-fill" style="width:45%"></div></div><span class="bar-count">9</span></div>
+                <div class="bar-row"><span class="bar-label">Mar</span><div class="bar-track"><div class="bar-fill" style="width:70%"></div></div><span class="bar-count">14</span></div>
+                <div class="bar-row"><span class="bar-label">Mer</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-count">20</span></div>
+                <div class="bar-row"><span class="bar-label">Gio</span><div class="bar-track"><div class="bar-fill" style="width:60%"></div></div><span class="bar-count">12</span></div>
+                <div class="bar-row"><span class="bar-label">Ven</span><div class="bar-track"><div class="bar-fill" style="width:85%"></div></div><span class="bar-count">17</span></div>
+                <div class="bar-row"><span class="bar-label">Sab</span><div class="bar-track"><div class="bar-fill" style="width:90%"></div></div><span class="bar-count">18</span></div>
+            </div>
+
+            <hr style="border:none;border-top:1px solid #f0f0f0;margin:20px 0;">
+
+            <span class="bc-label">Riepilogo stato &mdash; mese corrente</span>
+            <div style="display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;">
+                <span class="badge badge-attesa"><i class="fas fa-clock"></i> In attesa: 3</span>
+                <span class="badge badge-accettato"><i class="fas fa-check"></i> Accettate: 47</span>
+                <span class="badge badge-rifiutato"><i class="fas fa-times"></i> Rifiutate: 5</span>
+            </div>
+        </div>
+
+        <!-- CARD TASSO -->
+        <div class="bento-card">
+            <span class="bc-label">Tasso di accettazione</span>
+            <div class="circle-wrap">
+                <svg width="84" height="84" viewBox="0 0 84 84">
+                    <circle cx="42" cy="42" r="34" fill="none" stroke="#e2e8f0" stroke-width="7"/>
+                    <circle cx="42" cy="42" r="34" fill="none" stroke="#B8860B" stroke-width="7"
+                        stroke-dasharray="171 201"
+                        stroke-linecap="round" transform="rotate(-90 42 42)"/>
+                </svg>
+                <div class="circle-pct">90%</div>
+                <div class="circle-sub">52 trattate totali</div>
+            </div>
+        </div>
+
+        <!-- CARD TOP ORARI -->
+        <div class="bento-card">
+            <span class="bc-label">Orari più richiesti</span>
+            <ul class="top-list">
+                <li><span class="top-ora">10:00</span><div class="top-bar"><div class="top-bar-fill" style="width:100%"></div></div><span class="top-cnt">23</span></li>
+                <li><span class="top-ora">16:00</span><div class="top-bar"><div class="top-bar-fill" style="width:82%"></div></div><span class="top-cnt">19</span></li>
+                <li><span class="top-ora">09:00</span><div class="top-bar"><div class="top-bar-fill" style="width:70%"></div></div><span class="top-cnt">16</span></li>
+                <li><span class="top-ora">15:00</span><div class="top-bar"><div class="top-bar-fill" style="width:56%"></div></div><span class="top-cnt">13</span></li>
+                <li><span class="top-ora">11:00</span><div class="top-bar"><div class="top-bar-fill" style="width:43%"></div></div><span class="top-cnt">10</span></li>
+            </ul>
+        </div>
+
+    </div>
+</div>
+
+<!-- TAB INBOX -->
+<div id="tab-inbox" class="tab-content">
+    <div class="card" style="border-left:5px solid #ffc107;">
+        <div class="card-header">
+            <span class="time-badge">09:30</span>
+            <span class="date-badge">17 Mag</span>
+        </div>
+        <h3 style="font-size:1.1rem;font-weight:700;color:var(--primary);margin:0 0 4px;">Marco Rossi</h3>
+        <div class="service-info"><i class="fas fa-cut"></i> Taglio + Barba</div>
+        <a class="phone-link"><i class="fas fa-phone"></i> 348 1234567</a>
+        <div class="actions-stack">
+            <a href="#" class="btn btn-green" style="width:100%;max-width:none;"><i class="fas fa-check"></i> Accetta</a>
+            <a href="#" class="btn btn-red" style="width:100%;max-width:none;"><i class="fas fa-times"></i> Rifiuta</a>
+        </div>
+    </div>
+    <div class="card" style="border-left:5px solid #ffc107;">
+        <div class="card-header">
+            <span class="time-badge">14:00</span>
+            <span class="date-badge">17 Mag</span>
+        </div>
+        <h3 style="font-size:1.1rem;font-weight:700;color:var(--primary);margin:0 0 4px;">Luca Ferrari</h3>
+        <div class="service-info"><i class="fas fa-cut"></i> Taglio Classico</div>
+        <a class="phone-link"><i class="fas fa-phone"></i> 333 9876543</a>
+        <div class="actions-stack">
+            <a href="#" class="btn btn-green" style="width:100%;max-width:none;"><i class="fas fa-check"></i> Accetta</a>
+            <a href="#" class="btn btn-red" style="width:100%;max-width:none;"><i class="fas fa-times"></i> Rifiuta</a>
+        </div>
+    </div>
+</div>
+
+<!-- TAB AGENDA -->
+<div id="tab-agenda" class="tab-content">
+    <div class="view-toggle">
+        <button class="view-btn active">Lista</button>
+        <button class="view-btn">Settimana</button>
+    </div>
+
+    <div class="week-nav">
+        <button><i class="fas fa-chevron-left"></i></button>
+        <span>12/05 – 18/05</span>
+        <button><i class="fas fa-chevron-right"></i></button>
+    </div>
+    <div class="week-grid" style="margin-bottom:14px;">
+        <div class="week-day"><div class="week-day-header">Lun</div><div class="week-day-date">12</div><div class="appt-badge">09:00 Marco</div><div class="appt-badge">10:30 Luca</div></div>
+        <div class="week-day"><div class="week-day-header">Mar</div><div class="week-day-date">13</div><div class="appt-badge">15:00 Davide</div></div>
+        <div class="week-day today"><div class="week-day-header">Mer</div><div class="week-day-date">14</div><div class="appt-badge">09:30 Giorgio</div><div class="appt-badge">11:00 Fabio</div><div class="appt-badge">16:00 Aldo</div></div>
+        <div class="week-day"><div class="week-day-header">Gio</div><div class="week-day-date">15</div></div>
+        <div class="week-day"><div class="week-day-header">Ven</div><div class="week-day-date">16</div><div class="appt-badge">10:00 Riccardo</div></div>
+        <div class="week-day"><div class="week-day-header">Sab</div><div class="week-day-date">17</div><div class="appt-badge">08:30 Pietro</div><div class="appt-badge">14:00 Enzo</div></div>
+        <div class="week-day"><div class="week-day-header">Dom</div><div class="week-day-date">18</div></div>
+    </div>
+
+    <div class="card" style="border-left:5px solid #28a745;">
+        <div class="card-header">
+            <span class="time-badge">09:00</span>
+            <span class="date-badge">12 Mag</span>
+        </div>
+        <h3 style="font-size:1.1rem;font-weight:700;color:var(--primary);margin:0 0 4px;">Marco Rossi</h3>
+        <div class="service-info"><i class="fas fa-cut"></i> Taglio Classico</div>
+        <a class="phone-link"><i class="fas fa-phone"></i> 348 1234567</a>
+    </div>
+</div>
+
+<!-- TAB TOOLS -->
+<div id="tab-tools" class="tab-content">
+    <div class="card" style="border-left:5px solid var(--accent);">
+        <div class="card-header">
+            <h3 class="client-name"><i class="far fa-clock"></i> Orari di Apertura</h3>
+        </div>
+        <table class="hours-table">
+            <thead><tr><th>Giorno</th><th>Chiuso</th><th>Mattina inizio</th><th>Mattina fine</th><th>Pom. inizio</th><th>Pom. fine</th></tr></thead>
+            <tbody>
+                <tr class="day-closed"><td style="font-weight:600;">Domenica</td><td><input type="checkbox" checked></td><td><input type="time" disabled></td><td><input type="time" disabled></td><td><input type="time" disabled></td><td><input type="time" disabled></td></tr>
+                <tr class="day-closed"><td style="font-weight:600;">Lunedì</td><td><input type="checkbox" checked></td><td><input type="time" disabled></td><td><input type="time" disabled></td><td><input type="time" disabled></td><td><input type="time" disabled></td></tr>
+                <tr><td style="font-weight:600;">Martedì</td><td><input type="checkbox"></td><td><input type="time" value="08:00"></td><td><input type="time" value="12:30"></td><td><input type="time" value="15:00"></td><td><input type="time" value="19:30"></td></tr>
+                <tr><td style="font-weight:600;">Mercoledì</td><td><input type="checkbox"></td><td><input type="time" value="08:30"></td><td><input type="time" value="18:30"></td><td><input type="time"></td><td><input type="time"></td></tr>
+                <tr><td style="font-weight:600;">Giovedì</td><td><input type="checkbox"></td><td><input type="time" value="08:00"></td><td><input type="time" value="12:30"></td><td><input type="time" value="15:00"></td><td><input type="time" value="19:30"></td></tr>
+                <tr><td style="font-weight:600;">Venerdì</td><td><input type="checkbox"></td><td><input type="time" value="08:00"></td><td><input type="time" value="19:30"></td><td><input type="time"></td><td><input type="time"></td></tr>
+                <tr><td style="font-weight:600;">Sabato</td><td><input type="checkbox"></td><td><input type="time" value="08:00"></td><td><input type="time" value="18:30"></td><td><input type="time"></td><td><input type="time"></td></tr>
+            </tbody>
+        </table>
+        <div style="margin-top:16px;"><button class="btn btn-green"><i class="fas fa-save"></i> Salva Orari</button></div>
+    </div>
+
+    <div class="card" style="border-left:5px solid #6c757d;margin-top:0;">
+        <div class="card-header">
+            <h3 class="client-name"><i class="fas fa-lock"></i> Cambio Password</h3>
+        </div>
+        <div style="max-width:380px;">
+            <div class="form-group"><label>Password attuale</label><input type="password" placeholder="••••••••"></div>
+            <div class="form-group"><label>Nuova password</label><input type="password" placeholder="••••••••"></div>
+            <div class="form-group"><label>Conferma nuova password</label><input type="password" placeholder="••••••••"></div>
+            <button class="btn" style="background:#495057;color:#fff;"><i class="fas fa-key"></i> Aggiorna Password</button>
+        </div>
+    </div>
+</div>
+
+<!-- TAB CMS -->
+<div id="tab-cms" class="tab-content">
+    <div class="card">
+        <div class="card-header"><h3 class="client-name"><i class="fas fa-share-alt"></i> Social Links</h3></div>
+        <div style="max-width:440px;">
+            <div class="form-group">
+                <label><i class="fab fa-instagram" style="color:#C13584;margin-right:6px;"></i> Instagram</label>
+                <input type="url" placeholder="https://instagram.com/tuoprofilo">
+            </div>
+            <div class="form-group">
+                <label><i class="fab fa-facebook" style="color:#1877F2;margin-right:6px;"></i> Facebook</label>
+                <input type="url" placeholder="https://facebook.com/tuapagina">
+            </div>
+            <button class="btn btn-green"><i class="fas fa-save"></i> Salva Links</button>
+        </div>
+    </div>
+
+    <div class="card" style="border-left:5px solid #6c757d;">
+        <div class="card-header"><h3 class="client-name"><i class="fas fa-tags"></i> Categorie Listino</h3></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+            <span style="background:#f5f5f5;padding:6px 12px;border-radius:20px;border:1px solid #e0e0e0;font-size:0.9rem;display:flex;align-items:center;gap:8px;">Taglio &amp; Styling <span style="color:var(--red);font-weight:700;cursor:pointer;">&times;</span></span>
+            <span style="background:#f5f5f5;padding:6px 12px;border-radius:20px;border:1px solid #e0e0e0;font-size:0.9rem;display:flex;align-items:center;gap:8px;">Barba <span style="color:var(--red);font-weight:700;cursor:pointer;">&times;</span></span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-end;max-width:380px;">
+            <div class="form-group" style="flex:1;margin:0;"><label>Nuova categoria</label><input type="text" placeholder="Es. Trattamenti"></div>
+            <button class="btn btn-green" style="white-space:nowrap;height:44px;"><i class="fas fa-plus"></i> Aggiungi</button>
+        </div>
+    </div>
+
+    <div class="card" style="border-left:5px solid var(--accent);">
+        <div class="card-header"><h3 class="client-name"><i class="fas fa-cut"></i> Gestione Listino</h3></div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+            <thead><tr style="border-bottom:2px solid #f0f0f0;">
+                <th style="padding:10px;font-size:0.78rem;color:#999;text-transform:uppercase;">Categoria</th>
+                <th style="padding:10px;font-size:0.78rem;color:#999;text-transform:uppercase;">Servizio</th>
+                <th style="padding:10px;font-size:0.78rem;color:#999;text-transform:uppercase;">Prezzo</th>
+                <th></th>
+            </tr></thead>
+            <tbody>
+                <tr style="border-bottom:1px solid #f5f5f5;">
+                    <td style="padding:10px;font-weight:600;color:var(--accent);font-size:0.88rem;">Taglio</td>
+                    <td style="padding:10px;">Taglio Classico</td>
+                    <td style="padding:10px;">€ 18,00</td>
+                    <td style="padding:10px;text-align:right;"><i class="fas fa-trash" style="color:var(--red);cursor:pointer;"></i></td>
+                </tr>
+                <tr style="border-bottom:1px solid #f5f5f5;">
+                    <td style="padding:10px;font-weight:600;color:var(--accent);font-size:0.88rem;">Barba</td>
+                    <td style="padding:10px;">Rasatura Classica</td>
+                    <td style="padding:10px;">€ 15,00</td>
+                    <td style="padding:10px;text-align:right;"><i class="fas fa-trash" style="color:var(--red);cursor:pointer;"></i></td>
+                </tr>
+            </tbody>
+        </table>
+        <div style="background:#f9f9f9;padding:20px;border-radius:10px;">
+            <h4 style="margin:0 0 14px;font-size:0.95rem;">Aggiungi Servizio</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="form-group"><label>Categoria</label><select><option>Taglio &amp; Styling</option><option>Barba</option></select></div>
+                <div class="form-group"><label>Nome</label><input type="text" placeholder="Es. Taglio Bambino"></div>
+                <div class="form-group"><label>Prezzo</label><input type="number" placeholder="0.00"></div>
+                <div class="form-group"><label>Dettagli</label><input type="text" placeholder="Opzionale"></div>
+                <div style="grid-column:1/-1;"><button class="btn btn-green" style="width:100%;"><i class="fas fa-plus-circle"></i> Aggiungi al Listino</button></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showTab(name, btn) {
+    document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.tab-btn').forEach(function(b)    { b.classList.remove('active'); });
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+}
+
+// CountUp animation
+(function() {
+    var target = 47, el = document.getElementById('countEl');
+    if (!el) return;
+    var start = 0, step = target / (900 / 16);
+    var t = setInterval(function() {
+        start += step;
+        if (start >= target) { el.textContent = target; clearInterval(t); return; }
+        el.textContent = Math.floor(start);
+    }, 16);
+})();
+</script>
+</body>
+</html>

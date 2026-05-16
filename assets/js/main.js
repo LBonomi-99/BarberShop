@@ -1,144 +1,162 @@
-// Funzione Contatore Caratteri
+// Contatore caratteri
 function updateCount(field) {
     const count = field.value.length;
-    document.getElementById('charCount').innerText = count + "/100";
+    document.getElementById('charCount').textContent = count + ' / 100';
 }
 
-// Event Listener Submit Form
-document.getElementById('bookingForm').addEventListener('submit', function(e) {
-    let valid = true;
+// Scroll reveal via IntersectionObserver
+(function () {
+    const observer = new IntersectionObserver(
+        function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        },
+        { threshold: 0.12 }
+    );
+    document.querySelectorAll('.reveal').forEach(function (el) {
+        observer.observe(el);
+    });
+})();
 
-    // A. VALIDAZIONE TELEFONO
-    const phoneInput = document.getElementById('phone');
-    const phoneError = document.getElementById('phoneError');
-    const phoneVal = phoneInput.value.replace(/\s/g, '').replace(/-/g, '');
-    let cleanNumber = phoneVal;
-    if (cleanNumber.startsWith('+39')) cleanNumber = cleanNumber.substring(3);
-    else if (cleanNumber.startsWith('0039')) cleanNumber = cleanNumber.substring(4);
-    const isMobile = /^[3]\d{9}$/.test(cleanNumber);
+// Hamburger menu
+(function () {
+    var btn   = document.getElementById('hamburgerBtn');
+    var links = document.getElementById('navLinks');
+    if (!btn || !links) return;
+    btn.addEventListener('click', function () {
+        var open = links.classList.toggle('open');
+        btn.classList.toggle('open', open);
+        btn.setAttribute('aria-expanded', open);
+    });
+    // Chiudi al click su un link
+    links.querySelectorAll('a').forEach(function (a) {
+        a.addEventListener('click', function () {
+            links.classList.remove('open');
+            btn.classList.remove('open');
+            btn.setAttribute('aria-expanded', 'false');
+        });
+    });
+})();
 
-    if (!isMobile) {
+// Caricamento orari disponibili
+function caricaMenuOrari() {
+    var dataScelta = document.getElementById('date').value;
+    var selectTime = document.getElementById('time');
+    if (!dataScelta) return;
+
+    selectTime.innerHTML = '<option value="">Caricamento orari...</option>';
+    selectTime.classList.add('select-loading');
+
+    fetch('api_disponibilita.php?data=' + dataScelta)
+        .then(function (r) { return r.json(); })
+        .then(function (orari) {
+            selectTime.classList.remove('select-loading');
+            selectTime.innerHTML = '';
+
+            if (orari.length === 0) {
+                var d = new Date(dataScelta);
+                var day = d.getDay();
+                selectTime.innerHTML = (day === 0 || day === 1)
+                    ? '<option value="">Siamo chiusi questo giorno</option>'
+                    : '<option value="">Nessuna disponibilit&agrave;</option>';
+                return;
+            }
+
+            var def = document.createElement('option');
+            def.value = '';
+            def.text  = '-- Seleziona Orario --';
+            selectTime.appendChild(def);
+
+            orari.forEach(function (ora) {
+                var opt   = document.createElement('option');
+                opt.value = ora;
+                opt.text  = ora;
+                selectTime.appendChild(opt);
+            });
+        })
+        .catch(function () {
+            selectTime.classList.remove('select-loading');
+            selectTime.innerHTML = '<option value="">Errore caricamento — riprova</option>';
+        });
+}
+
+// Validazione form
+document.getElementById('bookingForm').addEventListener('submit', function (e) {
+    var valid = true;
+
+    // Telefono
+    var phoneInput = document.getElementById('phone');
+    var phoneError = document.getElementById('phoneError');
+    var cleaned    = phoneInput.value.replace(/\s/g, '').replace(/-/g, '');
+    if (cleaned.startsWith('+39'))   cleaned = cleaned.slice(3);
+    if (cleaned.startsWith('0039')) cleaned = cleaned.slice(4);
+    if (!/^[3]\d{9}$/.test(cleaned)) {
         e.preventDefault();
         phoneError.style.display = 'block';
-        phoneInput.style.borderColor = 'red';
+        phoneInput.style.borderColor = '#c0392b';
         valid = false;
     } else {
         phoneError.style.display = 'none';
-        phoneInput.style.borderColor = '#ddd';
+        phoneInput.style.borderColor = '';
     }
 
-    // B. VALIDAZIONE PAROLE
-    const descInput = document.getElementById('service-desc');
-    const textError = document.getElementById('textError');
-    const textVal = descInput.value.toLowerCase();
-    const blacklist = ['parolaccia', 'insulto', 'stupido', 'scemo', 'truffa', 'spam', 'casino', 'troia', 'cazzo', 'merda', 'stronzo', 'vaffanculo', 'bastardo', 'ignorante', 'idiota', 'culattone', 'zecca', 'balordo', 'cretino']; 
-    
-    let hasBadWords = false;
-    for (let word of blacklist) {
-        if (textVal.includes(word)) {
-            hasBadWords = true;
-            break;
-        }
-    }
-
-    if (hasBadWords) {
+    // Parole non consentite
+    var descInput = document.getElementById('service-desc');
+    var textError = document.getElementById('textError');
+    var blacklist = ['parolaccia','insulto','stupido','scemo','truffa','spam','casino','troia','cazzo','merda','stronzo','vaffanculo','bastardo','ignorante','idiota','culattone','zecca','balordo','cretino'];
+    var hasBad    = blacklist.some(function (w) { return descInput.value.toLowerCase().includes(w); });
+    if (hasBad) {
         e.preventDefault();
         textError.style.display = 'block';
-        descInput.style.borderColor = 'red';
+        descInput.style.borderColor = '#c0392b';
         valid = false;
     } else {
         textError.style.display = 'none';
-        descInput.style.borderColor = '#ddd';
+        descInput.style.borderColor = '';
     }
 
     return valid;
 });
 
-// Funzione Caricamento Orari (AJAX/Fetch)
-function caricaMenuOrari() {
-    const dataScelta = document.getElementById('date').value;
-    const selectTime = document.getElementById('time');
-    
-    if (!dataScelta) return;
+// Messaggi di ritorno
+(function () {
+    var params = new URLSearchParams(window.location.search);
+    var status = params.get('status');
+    if (!status) return;
 
-    const dateObj = new Date(dataScelta);
-    const day = dateObj.getDay(); 
-    
-    selectTime.innerHTML = '<option>Verifica disponibilità...</option>';
-
-    fetch(`api_disponibilita.php?data=${dataScelta}`)
-        .then(response => response.json())
-        .then(orari => {
-            selectTime.innerHTML = ''; 
-            
-            if (orari.length === 0) {
-                if (day === 0 || day === 1) {
-                    selectTime.innerHTML = '<option value="">Siamo Chiusi in questo giorno</option>';
-                } else {
-                    selectTime.innerHTML = '<option value="">Tutto esaurito / Nessuna disponibilità</option>';
-                }
-                return;
-            }
-
-            const defaultOpt = document.createElement('option');
-            defaultOpt.value = "";
-            defaultOpt.text = "-- Seleziona Orario --";
-            selectTime.appendChild(defaultOpt);
-
-            orari.forEach(ora => {
-                const opt = document.createElement('option');
-                opt.value = ora;
-                opt.text = ora;
-                selectTime.appendChild(opt);
-            });
-        })
-        .catch(err => {
-            console.error(err);
-            selectTime.innerHTML = '<option>Errore caricamento</option>';
-        });
-}
-
-// Utility Lettura Parametri URL
-function getParameterByName(name) {
-    const url = window.location.href;
-    name = name.replace(/[\[\]]/g, '\\$&');
-    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
-        results = regex.exec(url);
-    if (!results) return null;
-    if (!results[2]) return '';
-    return decodeURIComponent(results[2].replace(/\+/g, ' '));
-}
-
-// Logica OnLoad (Gestione messaggi di ritorno)
-window.onload = function() {
-    const status = getParameterByName('status');
-    const form = document.getElementById('bookingForm');
+    var form = document.getElementById('bookingForm');
+    if (!form) return;
 
     if (status === 'success') {
-        const msg = document.createElement('div');
-        msg.style.backgroundColor = '#A1B59C';
-        msg.style.color = 'white';
-        msg.style.padding = '20px';
-        msg.style.marginBottom = '20px';
-        msg.style.textAlign = 'center';
-        msg.style.fontWeight = 'bold';
-        msg.style.border = '1px solid #B8860B';
+        var msg = document.createElement('div');
+        msg.className = 'success-message';
         msg.innerHTML = '<i class="fas fa-check-circle"></i> Richiesta inviata! Ti confermeremo a breve.';
-        
         form.parentNode.insertBefore(msg, form);
-        msg.scrollIntoView({behavior: "smooth", block: "center"});
-        window.history.replaceState({}, document.title, window.location.pathname + "#prenota");
+        msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        window.history.replaceState({}, '', window.location.pathname + '#prenota');
+        return;
     }
-    else if (status === 'error_length') {
-        alert("Errore: Testo troppo lungo.");
+
+    var errorMessages = {
+        'error_length':   'Testo troppo lungo (max 100 caratteri).',
+        'error_badwords': 'Il testo contiene parole non consentite.',
+        'error_name_len': 'Nome troppo lungo (max 40 caratteri).',
+        'error_limit':    'Hai raggiunto il massimo di prenotazioni giornaliere (2) per questo numero.',
+        'error':          'Si &egrave; verificato un errore. Riprova.'
+    };
+
+    var errText = errorMessages[status];
+    if (errText) {
+        var errDiv = document.createElement('div');
+        errDiv.className = 'error-message';
+        errDiv.style.display = 'block';
+        errDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + errText;
+        form.parentNode.insertBefore(errDiv, form);
+        errDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        window.history.replaceState({}, '', window.location.pathname + '#prenota');
     }
-    else if (status === 'error_badwords') {
-        alert("Errore: Testo non consentito.");
-    }
-    else if (status === 'error_name_len') {
-        alert("Errore: Nome troppo lungo (Max 40 caratteri).");
-    }
-    else if (status === 'error_limit') {
-        alert("ATTENZIONE: Hai raggiunto il numero massimo di prenotazioni giornaliere (2) per questo numero di telefono.");
-    }
-};
+})();

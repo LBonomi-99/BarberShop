@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview — Vetrina BarberShop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+    <div class="container">
+        <nav>
+            <div class="logo">M. Cavallara</div>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#chi-siamo">Chi Siamo</a></li>
+                <li><a href="#listino">Listino</a></li>
+                <li><a href="#recensioni">Recensioni</a></li>
+                <li><a href="#prenota" class="nav-cta">Prenota</a></li>
+            </ul>
+            <button class="hamburger" id="hamburgerBtn" aria-label="Menu" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+        </nav>
+    </div>
+</header>
+
+<!-- HERO — ASYMMETRIC SPLIT -->
+<section class="hero">
+    <div class="hero-content">
+        <span class="hero-eyebrow">Cerlongo &middot; Mantova</span>
+        <h1>L'arte del<br>taglio<br>perfetto.</h1>
+        <p>Tradizione e stile si incontrano per ogni dettaglio della tua immagine.</p>
+        <a href="#prenota" class="btn-cta">Prenota ora</a>
+    </div>
+    <div class="hero-visual" style="background: linear-gradient(135deg, #2a2a2a 0%, #1C1C1C 40%, #3a3530 100%); display:flex; align-items:center; justify-content:center;">
+        <div style="text-align:center; color: rgba(184,134,11,0.35);">
+            <i class="fas fa-cut" style="font-size: 7rem;"></i>
+            <p style="font-family:'Playfair Display',serif; font-size:0.9rem; letter-spacing:3px; margin-top:20px; text-transform:uppercase; color: rgba(184,134,11,0.5);">Hero Image</p>
+        </div>
+    </div>
+</section>
+
+<!-- CHI SIAMO / PHILOSOPHY -->
+<section class="section-padding philosophy reveal">
+    <div class="container">
+        <div class="philosophy-grid">
+            <div class="philosophy-img">
+                <img src="https://picsum.photos/seed/barber1/540/420" alt="Il Barbiere" style="width:100%; border:4px solid #fff; box-shadow:0 18px 44px rgba(0,0,0,0.12);">
+            </div>
+            <div class="philosophy-text">
+                <h2 class="section-title">La nostra filosofia</h2>
+                <p class="body-text">Da oltre vent'anni offriamo un servizio di taglio e cura della barba di alta qualità. Ogni cliente è accolto con professionalità e attenzione ai dettagli, perché crediamo che un buon taglio sia molto più di una semplice operazione estetica.</p>
+                <p class="body-text" style="margin-top: 1rem;">Utilizziamo solo prodotti selezionati e tecniche affinati nel tempo, per garantire un risultato impeccabile e duraturo.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- LISTINO -->
+<section id="listino" class="section-padding services reveal">
+    <div class="container">
+        <h2 class="section-title">Listino Prezzi</h2>
+        <span class="section-subtitle">Qualità senza compromessi</span>
+
+        <div class="service-category">
+            <h3 class="category-title">Taglio &amp; Styling</h3>
+            <div class="service-item">
+                <span class="service-name">Taglio Classico</span>
+                <span class="service-dots"></span>
+                <span class="service-price">€ 18,00</span>
+            </div>
+            <div class="service-item">
+                <span class="service-name">Taglio Bambino</span>
+                <span class="service-dots"></span>
+                <span class="service-price">€ 14,00</span>
+            </div>
+            <div class="service-item">
+                <span class="service-name">Taglio + Shampoo</span>
+                <span class="service-dots"></span>
+                <span class="service-price">€ 24,00</span>
+            </div>
+            <p class="service-desc">Include asciugatura e styling professionale</p>
+        </div>
+
+        <div class="service-category">
+            <h3 class="category-title">Barba</h3>
+            <div class="service-item">
+                <span class="service-name">Rifinitura Barba</span>
+                <span class="service-dots"></span>
+                <span class="service-price">€ 10,00</span>
+            </div>
+            <div class="service-item">
+                <span class="service-name">Rasatura Classica</span>
+                <span class="service-dots"></span>
+                <span class="service-price">€ 15,00</span>
+            </div>
+            <div class="service-item">
+                <span class="service-name">Taglio + Barba</span>
+                <span class="service-dots"></span>
+                <span class="service-price">€ 26,00</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- RECENSIONI -->
+<section id="recensioni" class="section-padding reviews reveal">
+    <div class="container">
+        <h2 class="section-title">Cosa dicono i clienti</h2>
+        <span class="section-subtitle">Oltre 200 recensioni</span>
+        <div class="reviews-grid">
+            <div class="review-card">
+                <span class="review-quote">&ldquo;</span>
+                <p class="review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</p>
+                <p class="review-text">Uno dei migliori barbieri che abbia mai provato. Professionale, preciso e sempre disponibile. Il taglio dura settimane senza perdere la forma. Lo consiglio a tutti.</p>
+                <span class="review-author">Marco T.</span>
+            </div>
+            <div class="review-card">
+                <span class="review-quote">&ldquo;</span>
+                <p class="review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</p>
+                <p class="review-text">Ambiente curato e accogliente. La rasatura classica è un'esperienza unica, mi fido solo di qui.</p>
+                <span class="review-author">Luca B.</span>
+            </div>
+            <div class="review-card">
+                <span class="review-quote">&ldquo;</span>
+                <p class="review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</p>
+                <p class="review-text">Precisione e cura nei dettagli. Ogni volta esco soddisfatto. Ottimo rapporto qualità-prezzo.</p>
+                <span class="review-author">Davide R.</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- PRENOTA -->
+<section id="prenota" class="section-padding booking reveal">
+    <div class="container">
+        <h2 class="section-title">Prenota il tuo appuntamento</h2>
+        <span class="section-subtitle">Conferma entro poche ore</span>
+        <div class="booking-form">
+            <div class="form-group">
+                <label for="name">Nome e Cognome</label>
+                <input type="text" id="name" placeholder="Es. Marco Rossi">
+            </div>
+            <div class="form-group">
+                <label for="phone">Numero di Telefono</label>
+                <input type="tel" id="phone" placeholder="Es. 348 1234567">
+            </div>
+            <div class="form-group">
+                <label for="date">Data</label>
+                <input type="date" id="date">
+            </div>
+            <div class="form-group">
+                <label for="time">Orario</label>
+                <select id="time"><option>-- Seleziona prima la data --</option></select>
+            </div>
+            <div class="form-group">
+                <label for="service-desc">Servizio richiesto</label>
+                <textarea id="service-desc" rows="3" placeholder="Es. Taglio classico con sfumatura..." maxlength="100"></textarea>
+                <div class="char-count" id="charCount">0 / 100</div>
+            </div>
+            <button class="btn-cta" style="width:100%;">Invia Richiesta</button>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h3>M. Cavallara</h3>
+                <p>Barbiere tradizionale dal 2003.<br>Cerlongo, Mantova.</p>
+                <div class="social-links" style="margin-top:16px;">
+                    <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-facebook"></i></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h3>Orari</h3>
+                <ul>
+                    <li>Lun — Chiuso</li>
+                    <li>Mar — 08:00 / 12:30 &amp; 15:00 / 19:30</li>
+                    <li>Mer — 08:30 / 18:30 (continuato)</li>
+                    <li>Gio — 08:00 / 12:30 &amp; 15:00 / 19:30</li>
+                    <li>Ven — 08:00 / 19:30 (continuato)</li>
+                    <li>Sab — 08:00 / 18:30 (continuato)</li>
+                    <li>Dom — Chiuso</li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h3>Contatti</h3>
+                <ul>
+                    <li><i class="fas fa-map-marker-alt" style="color:var(--col-accent);margin-right:6px;"></i>Via Roma, 12 — Cerlongo (MN)</li>
+                    <li><i class="fas fa-phone" style="color:var(--col-accent);margin-right:6px;"></i>348 000 0000</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 M. Cavallara Barbiere &mdash; <a href="privacy.html" style="color:#666;">Privacy Policy</a>
+        </div>
+    </div>
+</footer>
+
+<script src="assets/js/main.js"></script>
+<script>
+// Forzare reveal visibile in preview (nessun scroll)
+document.querySelectorAll('.reveal').forEach(function(el) {
+    setTimeout(function() { el.classList.add('visible'); }, 200);
+});
+</script>
+</body>
+</html>

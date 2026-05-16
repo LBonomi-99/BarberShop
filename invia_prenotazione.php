@@ -1,91 +1,56 @@
 <?php
-// invia_prenotazione.php - VERSIONE CON LIMITI ANTISPAM E VALIDAZIONE NOME
 session_start();
 
-// CONFIGURAZIONE
-$host = 'localhost';
-$db   = 'barber_shop';
-$user = 'root'; 
-$pass = '';     
+$conn = new mysqli('localhost', 'root', '', 'barber_shop');
+if ($conn->connect_error) { header("Location: index.php?status=error#prenota"); exit; }
 
-$email_barbiere = "leonardobonomi949@gmail.com"; 
+if ($_SERVER["REQUEST_METHOD"] !== "POST") { header("Location: index.php"); exit; }
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+$nome        = trim($_POST['name']         ?? '');
+$telefono    = trim($_POST['phone']        ?? '');
+$data        = trim($_POST['date']         ?? '');
+$ora         = trim($_POST['time']         ?? '');
+$descrizione = trim($_POST['service-desc'] ?? '');
 
-$conn = new mysqli($host, $user, $pass, $db);
+// 1. Validazione nome
+if (strlen($nome) > 40) { header("Location: index.php?status=error_name_len#prenota"); exit; }
 
-if ($conn->connect_error) {
-    die("Connessione al database fallita: " . $conn->connect_error);
+// 2. Lunghezza descrizione
+if (strlen($descrizione) > 100) { header("Location: index.php?status=error_length#prenota"); exit; }
+
+// 3. Formato data e ora
+if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $data) || !preg_match('/^\d{2}:\d{2}$/', $ora)) {
+    header("Location: index.php?status=error#prenota"); exit;
 }
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Raccogliamo i dati
-    $nome = $conn->real_escape_string($_POST['name']);
-    $telefono = $conn->real_escape_string($_POST['phone']);
-    $data = $conn->real_escape_string($_POST['date']);
-    $ora = $conn->real_escape_string($_POST['time']);
-    $descrizione = $conn->real_escape_string($_POST['service-desc']);
+// 4. Blacklist parole
+$blacklist   = ['parolaccia','insulto','stupido','scemo','truffa','spam','casino','troia','cazzo','merda','stronzo','vaffanculo','bastardo','ignorante','idiota','culattone','zecca','balordo','cretino'];
+$testo_check = strtolower($descrizione);
+foreach ($blacklist as $word) {
+    if (strpos($testo_check, $word) !== false) { header("Location: index.php?status=error_badwords#prenota"); exit; }
+}
 
-    // --- 1. CONTROLLO LUNGHEZZA NOME (Max 40) ---
-    if (strlen($nome) > 40) {
-        header("Location: index.php?status=error_name_len#prenota");
-        exit;
-    }
+// 5. Limite giornaliero (max 2 per numero)
+$stmt = $conn->prepare("SELECT COUNT(*) as totale FROM prenotazioni WHERE telefono=? AND data_appuntamento=?");
+$stmt->bind_param("ss", $telefono, $data);
+$stmt->execute();
+if ((int)$stmt->get_result()->fetch_assoc()['totale'] >= 2) {
+    header("Location: index.php?status=error_limit#prenota"); exit;
+}
 
-    // --- 2. CONTROLLO LUNGHEZZA DETTAGLI (Max 100 - Già presente) ---
-    if (strlen($descrizione) > 100) {
-        header("Location: index.php?status=error_length#prenota");
-        exit;
-    }
+// 6. Inserimento
+$stmt = $conn->prepare("INSERT INTO prenotazioni (nome, telefono, data_appuntamento, ora_appuntamento, servizio, stato) VALUES (?, ?, ?, ?, ?, 'in_attesa')");
+$stmt->bind_param("sssss", $nome, $telefono, $data, $ora, $descrizione);
 
-    // --- 3. CONTROLLO PAROLE OFFENSIVE (BLACKLIST) ---
-    $blacklist = ['parolaccia', 'insulto', 'stupido', 'scemo', 'truffa', 'spam', 'casino', 'troia', 'cazzo', 'merda', 'stronzo', 'vaffanculo', 'bastardo', 'ignorante', 'idiota', 'culattone', 'zecca', 'balordo', 'cretino'];  
-    $testo_check = strtolower($descrizione);
-    foreach ($blacklist as $word) {
-        if (strpos($testo_check, $word) !== false) {
-            header("Location: index.php?status=error_badwords#prenota");
-            exit;
-        }
-    }
-
-    // --- 4. CONTROLLO LIMITE GIORNALIERO PER TELEFONO (Max 2) ---
-    // Contiamo quante prenotazioni esistono già per questo numero in QUESTA data
-    $sql_check_limit = "SELECT COUNT(*) as totale FROM prenotazioni WHERE telefono = '$telefono' AND data_appuntamento = '$data'";
-    $result_limit = $conn->query($sql_check_limit);
-    $row_limit = $result_limit->fetch_assoc();
-
-    if ($row_limit['totale'] >= 2) {
-        // Errore: Limite raggiunto
-        header("Location: index.php?status=error_limit#prenota");
-        exit;
-    }
-
-    // --- 5. INSERIMENTO DATABASE ---
-    $sql = "INSERT INTO prenotazioni (nome, telefono, data_appuntamento, ora_appuntamento, servizio, stato) 
-            VALUES ('$nome', '$telefono', '$data', '$ora', '$descrizione', 'in_attesa')";
-
-    if ($conn->query($sql) === TRUE) {
-        
-        // 6. INVIO EMAIL
-        $oggetto = "Nuova Prenotazione: $nome - $data $ora";
-        $messaggio = "Nuova richiesta dal sito web.\n\n";
-        $messaggio .= "Nome: $nome\n";
-        $messaggio .= "Tel: $telefono\n";
-        $messaggio .= "Data: $data alle $ora\n";
-        $messaggio .= "Servizio: $descrizione\n";
-        
-        $headers = "From: Sito Web <noreply@matteocavallara.it>\r\n";
-        $headers .= "Reply-To: $email_barbiere\r\n";
-        $headers .= "X-Mailer: PHP/" . phpversion();
-
-        @mail($email_barbiere, $oggetto, $messaggio, $headers);
-
-        header("Location: index.php?status=success#prenota");
-
-    } else {
-        echo "Errore Database: " . $conn->error;
-    }
+if ($stmt->execute()) {
+    $email_barbiere = "leonardobonomi949@gmail.com";
+    $oggetto        = "Nuova Prenotazione: $nome - $data $ora";
+    $messaggio      = "Nuova richiesta dal sito web.\n\nNome: $nome\nTel: $telefono\nData: $data alle $ora\nServizio: $descrizione";
+    $headers        = "From: Sito Web <noreply@matteocavallara.it>\r\nX-Mailer: PHP/" . phpversion();
+    @mail($email_barbiere, $oggetto, $messaggio, $headers);
+    header("Location: index.php?status=success#prenota");
+} else {
+    header("Location: index.php?status=error#prenota");
 }
 $conn->close();
 ?>

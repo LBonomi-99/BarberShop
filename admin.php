@@ -18,6 +18,7 @@ require_once 'admin_components/data.php';
 
 // 6. Rendering della Vista (HTML)
 require_once 'admin_components/header.php';
+require_once 'admin_components/tab_dashboard.php';
 require_once 'admin_components/tab_inbox.php';
 require_once 'admin_components/tab_agenda.php';
 require_once 'admin_components/tab_tools.php';
