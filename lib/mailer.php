@@ -46,7 +46,10 @@ function invia_email(string $to, string $subject, string $html, string $to_name 
             'content-type: application/json',
             'api-key: ' . BREVO_API_KEY,
         ],
-        CURLOPT_TIMEOUT        => 12,
+        // Timeout contenuti: l'invio e sincrono nel path della richiesta e
+        // Tophost taglia oltre ~30s. Due email = worst-case ~12s, non 24s.
+        CURLOPT_CONNECTTIMEOUT => 4,
+        CURLOPT_TIMEOUT        => 6,
     ]);
     $res  = curl_exec($ch);
     $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);

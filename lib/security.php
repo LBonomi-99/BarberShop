@@ -42,9 +42,19 @@ function rate_hit(mysqli $conn, string $scope, string $ident): void {
     if (random_int(1, 50) === 1) @$conn->query("DELETE FROM rate_hits WHERE created_at < (NOW() - INTERVAL 1 DAY)");
 }
 
-/** Verifica captcha Cloudflare Turnstile. True se valido O se non configurato (locale). */
+/**
+ * Verifica captcha Cloudflare Turnstile.
+ * - Nessuna chiave configurata (dev locale): salta -> true.
+ * - Config PARZIALE (sitekey o secret mancante): il widget puo essere
+ *   mostrato ma non e verificabile lato server -> fail-CLOSED (false),
+ *   cosi una dimenticanza in prod blocca il form invece di lasciar
+ *   passare i bot silenziosamente.
+ */
 function turnstile_ok(): bool {
-    if (!defined('TURNSTILE_SECRET') || TURNSTILE_SECRET === '') return true; // skip in dev
+    $sitekey = defined('TURNSTILE_SITEKEY') ? TURNSTILE_SITEKEY : '';
+    $secret  = defined('TURNSTILE_SECRET')  ? TURNSTILE_SECRET  : '';
+    if ($sitekey === '' && $secret === '') return true;  // captcha disattivato (dev)
+    if ($secret === '' || $sitekey === '') return false; // config incompleta -> blocca
     $token = $_POST['cf-turnstile-response'] ?? '';
     if ($token === '') return false;
     $ch = curl_init('https://challenges.cloudflare.com/turnstile/v0/siteverify');
@@ -52,11 +62,12 @@ function turnstile_ok(): bool {
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST           => true,
         CURLOPT_POSTFIELDS     => http_build_query([
-            'secret'   => TURNSTILE_SECRET,
+            'secret'   => $secret,
             'response' => $token,
             'remoteip' => client_ip(),
         ]),
-        CURLOPT_TIMEOUT        => 8,
+        CURLOPT_CONNECTTIMEOUT => 3,
+        CURLOPT_TIMEOUT        => 5,
     ]);
     $res = json_decode((string)curl_exec($ch), true);
     curl_close($ch);
