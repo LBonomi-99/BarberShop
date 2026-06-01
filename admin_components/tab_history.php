@@ -5,7 +5,7 @@
                 <span><?php echo date('d/m', strtotime($row['data_appuntamento'])); ?></span>
                 <span class="badge badge-<?php echo $row['stato']; ?>"><?php echo $row['stato']; ?></span>
             </div>
-            <strong><?php echo $row['nome']; ?></strong>
+            <strong><?php echo htmlspecialchars($row['nome']); ?></strong>
             
             <?php if($row['stato'] == 'rifiutato'): ?>
                 
@@ -14,7 +14,7 @@
                 if($row['data_appuntamento'] >= date('Y-m-d')): 
                 ?>
                     <div class="actions-stack" style="margin-top:10px;">
-                        <a href="admin.php?action=in_attesa&id=<?php echo $row['id']; ?>" class="btn btn-blue" onclick="return confirm('Vuoi ripristinare questa richiesta? Tornerà in Da Confermare.')">
+                        <a href="admin.php?action=in_attesa&id=<?php echo $row['id']; ?><?php echo csrf_q(); ?>" class="btn btn-blue" onclick="return confirm('Vuoi ripristinare questa richiesta? Tornerà in Da Confermare.')">
                             <i class="fas fa-undo"></i> Ripristina in Attesa
                         </a>
                     </div>

@@ -1,4 +1,21 @@
 <?php
+require_once __DIR__ . '/../lib/mailer.php';
+
+// --- CSRF: ogni mutazione richiede un token valido (link &t= o campo csrf) ---
+$is_mutation = isset($_GET['action']) || isset($_GET['track'])
+    || isset($_GET['delete_block']) || isset($_GET['delete_service']) || isset($_GET['delete_category'])
+    || isset($_POST['block_type']) || isset($_POST['manual_booking']) || isset($_POST['action']);
+if ($is_mutation && !csrf_ok()) {
+    header("Location: admin.php?current_tab=$active_tab&msg=csrf_error"); exit;
+}
+
+// --- Allowlist redirect esterni (anti open-redirect) ---
+function safe_redirect_url(string $url): string {
+    $allowed = ['https://wa.me/', 'https://web.whatsapp.com/', 'https://api.whatsapp.com/', 'https://calendar.google.com/'];
+    foreach ($allowed as $p) { if (strncmp($url, $p, strlen($p)) === 0) return $url; }
+    return 'admin.php';
+}
+
 // --- AZIONI STATO PRENOTAZIONI (GET) ---
 if (isset($_GET['id']) && (isset($_GET['action']) || isset($_GET['track']))) {
     $id = intval($_GET['id']);
@@ -6,13 +23,44 @@ if (isset($_GET['id']) && (isset($_GET['action']) || isset($_GET['track']))) {
     if (isset($_GET['action']) && $_GET['action'] != 'none') {
         $stato = $_GET['action'];
         if (in_array($stato, ['accettato', 'rifiutato', 'in_attesa'])) {
+
+            // Dettagli prenotazione (per email cliente + stato precedente)
+            $q = $conn->prepare("SELECT nome, email, data_appuntamento, ora_appuntamento, servizio, stato FROM prenotazioni WHERE id=?");
+            $q->bind_param("i", $id); $q->execute();
+            $pren = $q->get_result()->fetch_assoc();
+            $stato_prec = $pren['stato'] ?? '';
+
+            // Ripristino da storico: lo slot era stato liberato, va ri-occupato.
+            // Se nel frattempo l'ha preso un altro, non ripristinare.
+            if ($stato == 'in_attesa') {
+                if ($pren && !occupaSlot($conn, $id, $pren['data_appuntamento'], $pren['ora_appuntamento'])) {
+                    header("Location: admin.php?current_tab=$active_tab&msg=slot_taken"); exit;
+                }
+            }
+
             $stmt = $conn->prepare("UPDATE prenotazioni SET stato=? WHERE id=?");
             $stmt->bind_param("si", $stato, $id);
             $stmt->execute();
 
+            // Rifiuto/annullo: libera lo slot (torna disponibile online).
+            if ($stato == 'rifiutato') liberaSlot($conn, $id);
+
             if ($stato == 'accettato') aggiungiLog($conn, $id, "Accettato");
             if ($stato == 'rifiutato') aggiungiLog($conn, $id, "Rifiutato");
             if ($stato == 'in_attesa') aggiungiLog($conn, $id, "Ripristinato in Attesa");
+
+            // Email automatica al cliente
+            if ($pren && !empty($pren['email'])) {
+                $nm = $pren['nome']; $d = $pren['data_appuntamento']; $o = substr($pren['ora_appuntamento'], 0, 5);
+                if ($stato == 'accettato') {
+                    [$s, $h] = mail_conferma($nm, $d, $o, $pren['servizio'] ?? '');
+                    invia_email($pren['email'], $s, $h, $nm);
+                } elseif ($stato == 'rifiutato') {
+                    // accettato -> annullamento; in_attesa -> rifiuto richiesta
+                    [$s, $h] = ($stato_prec === 'accettato') ? mail_annullo($nm, $d, $o) : mail_rifiuto($nm, $d, $o);
+                    invia_email($pren['email'], $s, $h, $nm);
+                }
+            }
         }
     }
 
@@ -28,7 +76,7 @@ if (isset($_GET['id']) && (isset($_GET['action']) || isset($_GET['track']))) {
             default    => ""
         };
         if ($msg) aggiungiLog($conn, $id, $msg);
-        header("Location: " . $url_destinazione);
+        header("Location: " . safe_redirect_url($url_destinazione));
         exit;
     }
 
@@ -75,13 +123,33 @@ if (isset($_GET['delete_block'])) {
 if (isset($_POST['manual_booking'])) {
     $nome     = trim($_POST['nome'] ?? '');
     $tel      = trim($_POST['telefono'] ?? '');
+    $email    = trim($_POST['email'] ?? '');
     $data     = trim($_POST['data'] ?? '');
     $ora      = trim($_POST['ora'] ?? '');
     $servizio = trim($_POST['servizio'] ?? '');
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $email = null; // email opzionale per manuali
     if (strlen($nome) <= 100 && preg_match('/^\d{4}-\d{2}-\d{2}$/', $data) && preg_match('/^\d{2}:\d{2}$/', $ora)) {
-        $stmt = $conn->prepare("INSERT INTO prenotazioni (nome, telefono, data_appuntamento, ora_appuntamento, servizio, stato, log_azioni) VALUES (?, ?, ?, ?, ?, 'accettato', '[Admin] Manuale\n')");
-        $stmt->bind_param("sssss", $nome, $tel, $data, $ora, $servizio);
-        $stmt->execute();
+        // Inserimento + occupazione slot in transazione: se lo slot e gia preso, annulla.
+        $conn->begin_transaction();
+        try {
+            $stmt = $conn->prepare("INSERT INTO prenotazioni (nome, telefono, email, data_appuntamento, ora_appuntamento, servizio, stato, log_azioni) VALUES (?, ?, ?, ?, ?, ?, 'accettato', '[Admin] Manuale\n')");
+            $stmt->bind_param("ssssss", $nome, $tel, $email, $data, $ora, $servizio);
+            if (!$stmt->execute()) throw new Exception('insert');
+            $pid = $conn->insert_id;
+            if (!occupaSlot($conn, $pid, $data, $ora)) {
+                $conn->rollback();
+                header("Location: admin.php?current_tab=agenda&msg=slot_taken"); exit;
+            }
+            $conn->commit();
+        } catch (Exception $e) {
+            $conn->rollback();
+            header("Location: admin.php?current_tab=agenda&msg=error"); exit;
+        }
+        // Conferma email se fornita
+        if ($email) {
+            [$s, $h] = mail_conferma($nome, $data, $ora, $servizio);
+            invia_email($email, $s, $h, $nome);
+        }
     }
     header("Location: admin.php?current_tab=agenda"); exit;
 }
@@ -90,6 +158,7 @@ if (isset($_POST['manual_booking'])) {
 if (isset($_GET['action']) && $_GET['action'] == 'clean_old') {
     $conn->query("DELETE FROM prenotazioni WHERE data_appuntamento < DATE_SUB(NOW(), INTERVAL 1 YEAR)");
     $conn->query("DELETE FROM slot_full WHERE data_blocco < DATE_SUB(NOW(), INTERVAL 1 YEAR)");
+    $conn->query("DELETE FROM slot_occupati WHERE data < DATE_SUB(NOW(), INTERVAL 1 YEAR)");
     header("Location: admin.php?current_tab=tools&msg=cleaned"); exit;
 }
 
@@ -186,13 +255,55 @@ if ($post_action === 'update_opening_hours') {
     header("Location: admin.php?current_tab=tools&msg=hours_saved"); exit;
 }
 
+// Strumenti: Modalita conferma (auto | approval)
+if ($post_action === 'update_booking_mode') {
+    $mode = (($_POST['booking_mode'] ?? 'auto') === 'approval') ? 'approval' : 'auto';
+    $stmt = $conn->prepare("INSERT INTO admin_config (config_key, config_value) VALUES ('booking_mode',?) ON DUPLICATE KEY UPDATE config_value=?");
+    $stmt->bind_param("ss", $mode, $mode); $stmt->execute();
+    header("Location: admin.php?current_tab=tools&msg=mode_saved"); exit;
+}
+
+// Agenda: Sposta appuntamento (cambia data/ora, ri-occupa lo slot con check conflitto)
+if ($post_action === 'move_booking') {
+    $id   = intval($_POST['id'] ?? 0);
+    $data = trim($_POST['data'] ?? '');
+    $ora  = trim($_POST['ora']  ?? '');
+    if ($id && preg_match('/^\d{4}-\d{2}-\d{2}$/', $data) && preg_match('/^\d{2}:\d{2}$/', $ora)) {
+        // Dati per email di aggiornamento
+        $q = $conn->prepare("SELECT nome, email, servizio FROM prenotazioni WHERE id=?");
+        $q->bind_param("i", $id); $q->execute();
+        $pren = $q->get_result()->fetch_assoc();
+
+        $conn->begin_transaction();
+        try {
+            liberaSlot($conn, $id);                       // libera lo slot vecchio
+            if (!occupaSlot($conn, $id, $data, $ora)) {   // occupa il nuovo (1062 = preso)
+                $conn->rollback();
+                header("Location: admin.php?current_tab=agenda&msg=slot_taken"); exit;
+            }
+            $stmt = $conn->prepare("UPDATE prenotazioni SET data_appuntamento=?, ora_appuntamento=? WHERE id=?");
+            $stmt->bind_param("ssi", $data, $ora, $id); $stmt->execute();
+            $conn->commit();
+        } catch (Exception $e) {
+            $conn->rollback();
+            header("Location: admin.php?current_tab=agenda&msg=error"); exit;
+        }
+        aggiungiLog($conn, $id, "Spostato a $data $ora");
+        if ($pren && !empty($pren['email'])) {
+            [$s, $h] = mail_conferma($pren['nome'], $data, $ora, $pren['servizio'] ?? '');
+            invia_email($pren['email'], $s, $h, $pren['nome']);
+        }
+    }
+    header("Location: admin.php?current_tab=agenda&msg=moved"); exit;
+}
+
 // Strumenti: Cambio Password
 if ($post_action === 'change_password') {
     $old_pass  = $_POST['old_password']     ?? '';
     $new_pass  = $_POST['new_password']     ?? '';
     $conf_pass = $_POST['confirm_password'] ?? '';
 
-    if ($new_pass !== $conf_pass || strlen($new_pass) < 6) {
+    if ($new_pass !== $conf_pass || strlen($new_pass) < 10) {
         header("Location: admin.php?current_tab=tools&msg=pass_error"); exit;
     }
     if (!checkAdminPassword($conn, $old_pass)) {

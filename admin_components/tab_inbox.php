@@ -23,9 +23,9 @@
                 <span class="date-badge"><?php echo date('d M', strtotime($row['data_appuntamento'])); ?></span>
                 <span class="time-badge"><?php echo $row['ora_appuntamento']; ?></span>
             </div>
-            <h3 class="client-name"><?php echo $row['nome']; ?></h3>
-            <div class="service-info"><i class="fas fa-cut"></i> <?php echo $row['servizio']; ?></div>
-            <a href="tel:<?php echo $tel; ?>" class="phone-link"><i class="fas fa-phone"></i> <?php echo $row['telefono']; ?></a>
+            <h3 class="client-name"><?php echo htmlspecialchars($row['nome']); ?></h3>
+            <div class="service-info"><i class="fas fa-cut"></i> <?php echo htmlspecialchars($row['servizio']); ?></div>
+            <a href="tel:<?php echo $tel; ?>" class="phone-link"><i class="fas fa-phone"></i> <?php echo htmlspecialchars($row['telefono']); ?></a>
             
             <?php if($current_step == 'start'): ?>
                 <div class="actions-grid" style="margin-top:20px;">
@@ -37,10 +37,10 @@
                 <div class="flow-step">
                     <span class="step-title">Accettazione</span>
                     <div class="actions-stack">
-                        <a href="admin.php?track=gcal&id=<?php echo $row['id']; ?>&url=<?php echo $gcal; ?>" target="_blank" class="btn btn-blue" onclick="enableStep3(<?php echo $row['id']; ?>)">
+                        <a href="admin.php?track=gcal&id=<?php echo $row['id']; ?>&url=<?php echo $gcal; ?><?php echo csrf_q(); ?>" target="_blank" class="btn btn-blue" onclick="enableStep3(<?php echo $row['id']; ?>)">
                             <i class="far fa-calendar-plus"></i> 1. Aggiungi a Google Calendar
                         </a>
-                        <a href="admin.php?action=accettato&id=<?php echo $row['id']; ?>&track=wa_conf&url=<?php echo $wa_conf_link; ?>" id="btn-step3-<?php echo $row['id']; ?>" class="btn btn-wa btn-disabled" target="_blank" onclick="reloadAfterDelay()">
+                        <a href="admin.php?action=accettato&id=<?php echo $row['id']; ?>&track=wa_conf&url=<?php echo $wa_conf_link; ?><?php echo csrf_q(); ?>" id="btn-step3-<?php echo $row['id']; ?>" class="btn btn-wa btn-disabled" target="_blank" onclick="reloadAfterDelay()">
                             <i class="fab fa-whatsapp"></i> 2. Conferma WhatsApp & Salva
                         </a>
                         <a href="<?php echo $base_url; ?>&step=start" style="color:#999; font-size:0.8rem; margin-top:5px;">Annulla</a>
@@ -51,8 +51,8 @@
                 <div class="flow-step">
                     <span class="step-title">Rifiuto</span>
                     <div class="actions-stack">
-                        <a href="admin.php?action=rifiutato&id=<?php echo $row['id']; ?>&track=wa_rej&url=<?php echo $wa_rej_link; ?>" class="btn btn-wa"><i class="fab fa-whatsapp"></i> Declina Appuntamento WhatsApp</a>
-                        <a href="admin.php?action=rifiutato&id=<?php echo $row['id']; ?>" class="btn btn-red"><i class="fas fa-times"></i> Declina (Solo Archivia)</a>
+                        <a href="admin.php?action=rifiutato&id=<?php echo $row['id']; ?>&track=wa_rej&url=<?php echo $wa_rej_link; ?><?php echo csrf_q(); ?>" class="btn btn-wa"><i class="fab fa-whatsapp"></i> Declina Appuntamento WhatsApp</a>
+                        <a href="admin.php?action=rifiutato&id=<?php echo $row['id']; ?><?php echo csrf_q(); ?>" class="btn btn-red"><i class="fas fa-times"></i> Declina (Solo Archivia)</a>
                         <a href="<?php echo $base_url; ?>&step=start" style="color:#999; font-size:0.8rem; margin-top:5px;">Annulla</a>
                     </div>
                 </div>

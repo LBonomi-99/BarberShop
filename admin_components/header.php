@@ -137,6 +137,29 @@
         .week-day.today .week-day-date { color:var(--accent); }
         .appt-badge { background:#d4edda; color:#155724; font-size:0.67rem; padding:3px 5px; border-radius:4px; margin-bottom:3px; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; transition:0.15s; display:block; }
         .appt-badge:hover { filter:brightness(0.9); transform:translateY(-1px); }
+        .week-day-add { display:block; width:100%; margin-top:4px; border:1px dashed #d0d0d0; background:transparent; color:#bbb; border-radius:5px; font-size:0.85rem; line-height:1; padding:3px 0; cursor:pointer; transition:0.15s; font-family:inherit; }
+        .week-day-add:hover { border-color:var(--accent); color:var(--accent); }
+
+        /* ===== MODALITA CONFERMA (tools) ===== */
+        .mode-option { display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border:1px solid #e2e8f0; border-radius:10px; margin-bottom:10px; cursor:pointer; transition:0.15s; font-size:0.9rem; line-height:1.45; }
+        .mode-option:hover { border-color:var(--accent); }
+        .mode-option.selected { border-color:var(--accent); background:#fffaf0; }
+        .mode-option input { margin-top:3px; flex-shrink:0; }
+
+        /* ===== MODAL DETTAGLIO APPUNTAMENTO (agenda) ===== */
+        .appt-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; justify-content:center; align-items:center; z-index:2000; padding:16px; }
+        .appt-modal-overlay.open { display:flex; }
+        .appt-modal { background:#fff; border-radius:14px; width:100%; max-width:400px; box-shadow:0 12px 32px rgba(0,0,0,0.25); overflow:hidden; }
+        .appt-modal-head { background:var(--primary); color:#fff; padding:18px 20px; }
+        .appt-modal-head h3 { margin:0; font-size:1.15rem; font-weight:700; }
+        .appt-modal-head .am-sub { font-size:0.85rem; color:#bbb; margin-top:3px; }
+        .appt-modal-body { padding:18px 20px; }
+        .appt-modal-body .am-row { display:flex; align-items:center; gap:8px; font-size:0.92rem; color:#444; margin-bottom:8px; }
+        .appt-modal-body .am-row i { color:var(--accent); width:16px; text-align:center; }
+        .appt-modal-actions { display:flex; flex-direction:column; gap:10px; margin-top:14px; }
+        .am-move-form { display:none; gap:8px; margin-top:6px; padding-top:12px; border-top:1px dashed #ddd; }
+        .am-move-form.open { display:block; }
+        .am-close { background:transparent; border:none; color:#999; font-size:0.85rem; cursor:pointer; font-family:inherit; padding:6px; }
 
         /* ===== ORARI APERTURA ===== */
         .hours-table { width:100%; border-collapse:collapse; }
@@ -165,7 +188,7 @@
             <h3 style="color:var(--red);margin-top:0;"><i class="fas fa-exclamation-triangle"></i> Manutenzione Annuale</h3>
             <p style="margin:12px 0 20px;">Elimina storico &gt; 1 anno per GDPR.</p>
             <div style="display:flex;gap:10px;justify-content:center;flex-direction:column;">
-                <a href="admin.php?action=clean_old" class="btn btn-red">Esegui Pulizia</a>
+                <a href="admin.php?action=clean_old<?php echo csrf_q(); ?>" class="btn btn-red">Esegui Pulizia</a>
                 <button onclick="document.getElementById('maintenanceModal').style.display='none'" class="btn" style="background:#eee;color:#333;">Chiudi</button>
             </div>
         </div>
@@ -200,8 +223,13 @@
         'pass_error'   => 'Errore: password troppo corta o le due password non coincidono.',
         'pass_wrong'   => 'Errore: password attuale non corretta.',
         'cleaned'      => 'Storico vecchio eliminato.',
+        'mode_saved'   => 'Modalità di conferma aggiornata.',
+        'moved'        => 'Appuntamento spostato.',
+        'slot_taken'   => 'Slot già occupato: scegli un altro orario.',
+        'error'        => 'Operazione non riuscita. Riprova.',
+        'csrf_error'   => 'Sessione scaduta: ricarica la pagina e riprova.',
     ];
-    $is_error = in_array($admin_msg, ['pass_error','pass_wrong']);
+    $is_error = in_array($admin_msg, ['pass_error','pass_wrong','slot_taken','error','csrf_error']);
     echo '<div class="admin-feedback ' . ($is_error ? 'feedback-error' : 'feedback-success') . '">' . ($msgs[$admin_msg] ?? '') . '</div>';
     ?>
     <?php endif; ?>

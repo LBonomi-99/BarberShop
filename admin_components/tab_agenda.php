@@ -55,7 +55,7 @@
             <div class="flow-step">
                 <span class="step-title">Step 1 — Avvisa Cliente</span>
                 <div class="actions-stack">
-                    <a href="admin.php?track=wa_canc&id=<?php echo $row['id']; ?>&url=<?php echo $wa_canc; ?>&next_step=cancel_gcal" target="_blank" class="btn btn-wa"
+                    <a href="admin.php?track=wa_canc&id=<?php echo $row['id']; ?>&url=<?php echo $wa_canc; ?>&next_step=cancel_gcal<?php echo csrf_q(); ?>" target="_blank" class="btn btn-wa"
                        onclick="setTimeout(function(){ window.location.href='<?php echo $base_url; ?>&step=cancel_gcal'; },1000);">
                         <i class="fab fa-whatsapp"></i> 1. Avvisa su WhatsApp
                     </a>
@@ -70,10 +70,10 @@
             <div class="flow-step">
                 <span class="step-title">Step 2 — Rimuovi dal Calendario</span>
                 <div class="actions-stack">
-                    <a href="admin.php?track=gcal_del&id=<?php echo $row['id']; ?>&url=<?php echo $gcal_del; ?>" target="_blank" class="btn btn-blue">
+                    <a href="admin.php?track=gcal_del&id=<?php echo $row['id']; ?>&url=<?php echo $gcal_del; ?><?php echo csrf_q(); ?>" target="_blank" class="btn btn-blue">
                         <i class="far fa-calendar-minus"></i> 2. Apri Google Calendar
                     </a>
-                    <a href="admin.php?action=rifiutato&id=<?php echo $row['id']; ?>" class="btn btn-red">
+                    <a href="admin.php?action=rifiutato&id=<?php echo $row['id']; ?><?php echo csrf_q(); ?>" class="btn btn-red">
                         <i class="fas fa-check"></i> Conferma Cancellazione
                     </a>
                 </div>
@@ -83,10 +83,51 @@
         <?php endwhile; ?>
     </div><!-- /listView -->
 
+    <!-- MODAL DETTAGLIO / SPOSTA / ANNULLA -->
+    <div class="appt-modal-overlay" id="apptModal">
+        <div class="appt-modal">
+            <div class="appt-modal-head">
+                <h3 id="amName">—</h3>
+                <div class="am-sub" id="amWhen">—</div>
+            </div>
+            <div class="appt-modal-body">
+                <div class="am-row"><i class="fas fa-cut"></i> <span id="amServ">—</span></div>
+                <div class="am-row"><i class="fas fa-phone"></i> <a id="amTel" href="#" class="phone-link" style="margin:0;">—</a></div>
+
+                <div class="appt-modal-actions">
+                    <button type="button" class="btn btn-blue" id="amMoveBtn"><i class="far fa-calendar-alt"></i> Sposta</button>
+                    <a href="#" class="btn btn-red" id="amCancelBtn"
+                       onclick="return confirm('Annullare questo appuntamento? Lo slot tornerà disponibile online.');">
+                        <i class="fas fa-ban"></i> Annulla Appuntamento
+                    </a>
+
+                    <form class="am-move-form" id="amMoveForm" method="POST" action="admin.php?current_tab=agenda">
+                        <input type="hidden" name="action" value="move_booking">
+                        <input type="hidden" name="id" id="amMoveId" value="">
+                        <?php echo csrf_tag(); ?>
+                        <span class="step-title">Nuova data e ora</span>
+                        <div style="display:flex;gap:8px;">
+                            <input type="date" name="data" id="amMoveDate" required style="flex:1;">
+                            <select name="ora" id="amMoveTime" style="flex:1;">
+                                <?php $s=strtotime("08:00"); $e=strtotime("19:30"); while($s<=$e){ echo "<option>".date("H:i",$s)."</option>"; $s=strtotime('+30 mins',$s); } ?>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-green" style="margin-top:10px;">
+                            <i class="fas fa-check"></i> Conferma Spostamento
+                        </button>
+                    </form>
+
+                    <button type="button" class="am-close" id="amClose">Chiudi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div><!-- /tab agenda -->
 
 <script>
 var agendaData = <?php echo json_encode($prenotazioni_agenda_json, JSON_HEX_TAG); ?>;
+var csrfTok    = <?php echo json_encode(csrf_token()); ?>;
 var currentWeekStart = getMonday(new Date());
 
 function getMonday(d) {
@@ -133,14 +174,21 @@ function renderCalendar() {
                 var badge = document.createElement('div');
                 badge.className = 'appt-badge';
                 badge.title     = a.nome + ' — ' + a.servizio;
-                badge.textContent = a.ora_appuntamento + ' ' + a.nome.split(' ')[0];
-                badge.addEventListener('click', function () {
-                    document.getElementById('listViewBtn').click();
-                    var card = document.querySelector('[data-id="' + a.id + '"]');
-                    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                });
+                badge.textContent = a.ora_appuntamento.substring(0,5) + ' ' + a.nome.split(' ')[0];
+                badge.addEventListener('click', function () { openApptModal(a); });
                 cell.appendChild(badge);
             });
+
+        // "+" per inserire un appuntamento in questo giorno (apre il form manuale prefillato)
+        var addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'week-day-add';
+        addBtn.textContent = '+';
+        addBtn.title = 'Aggiungi prenotazione';
+        addBtn.addEventListener('click', function () {
+            window.location.href = 'admin.php?current_tab=tools&new_date=' + dateStr;
+        });
+        cell.appendChild(addBtn);
 
         grid.appendChild(cell);
     }
@@ -167,5 +215,33 @@ document.getElementById('calViewBtn') && document.getElementById('calViewBtn').a
     this.classList.add('active');
     document.getElementById('listViewBtn').classList.remove('active');
     renderCalendar();
+});
+
+/* ===== Modal dettaglio appuntamento ===== */
+function openApptModal(a) {
+    var ora = a.ora_appuntamento.substring(0,5);
+    var tel = (a.telefono || '').replace(/[^0-9+]/g, '');
+    document.getElementById('amName').textContent = a.nome;
+    document.getElementById('amWhen').textContent = a.data_appuntamento + ' • ' + ora;
+    document.getElementById('amServ').textContent = a.servizio || '—';
+    var telEl = document.getElementById('amTel');
+    telEl.textContent = a.telefono || '—';
+    telEl.href = tel ? ('tel:' + tel) : '#';
+    document.getElementById('amCancelBtn').href =
+        'admin.php?action=rifiutato&id=' + a.id + '&current_tab=agenda&t=' + encodeURIComponent(csrfTok);
+    document.getElementById('amMoveId').value   = a.id;
+    document.getElementById('amMoveDate').value = a.data_appuntamento;
+    document.getElementById('amMoveTime').value = ora;
+    document.getElementById('amMoveForm').classList.remove('open');
+    document.getElementById('apptModal').classList.add('open');
+}
+function closeApptModal() { document.getElementById('apptModal').classList.remove('open'); }
+
+document.getElementById('amClose').addEventListener('click', closeApptModal);
+document.getElementById('apptModal').addEventListener('click', function (e) {
+    if (e.target === this) closeApptModal();
+});
+document.getElementById('amMoveBtn').addEventListener('click', function () {
+    document.getElementById('amMoveForm').classList.toggle('open');
 });
 </script>

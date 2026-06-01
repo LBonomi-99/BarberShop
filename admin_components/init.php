@@ -14,6 +14,29 @@ function aggiungiLog($conn, $id, $messaggio) {
     $stmt->execute();
 }
 
+// --- HELPER OCCUPAZIONE SLOT (fonte unica disponibilita) ---
+// Occupa lo slot per la prenotazione $id. Ritorna true se ora e nostro,
+// false se gia occupato da un'altra prenotazione (errno 1062) o errore.
+function occupaSlot($conn, $id, $data, $ora) {
+    $ora  = substr($ora, 0, 5);
+    // Robusto sia se mysqli lancia eccezioni (PHP 8.1+ default) sia se ritorna false.
+    try {
+        $stmt = $conn->prepare("INSERT INTO slot_occupati (data, ora, prenotazione_id) VALUES (?, ?, ?)");
+        $stmt->bind_param("ssi", $data, $ora, $id);
+        return $stmt->execute();
+    } catch (mysqli_sql_exception $e) {
+        if ($conn->errno === 1062) return false; // slot gia preso da un'altra prenotazione
+        throw $e;
+    }
+}
+
+// Libera lo slot occupato dalla prenotazione $id (su rifiuto/annullo/eliminazione).
+function liberaSlot($conn, $id) {
+    $stmt = $conn->prepare("DELETE FROM slot_occupati WHERE prenotazione_id=?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+}
+
 // --- STATS DASHBOARD ---
 $stats_mese = ['accettato' => 0, 'in_attesa' => 0, 'rifiutato' => 0];
 $stats_giorno = array_fill(1, 7, 0); // indice DAYOFWEEK MySQL: 1=Dom 2=Lun ... 7=Sab
@@ -34,8 +57,15 @@ if ($stmt) { $stmt->execute(); $mese_prec_accettate = (int)$stmt->get_result()->
 
 // --- AGENDA JSON per calendario visuale (prossimi 35 giorni) ---
 $prenotazioni_agenda_json = [];
-$stmt = $conn->prepare("SELECT id, nome, data_appuntamento, ora_appuntamento, servizio FROM prenotazioni WHERE stato='accettato' AND data_appuntamento >= CURDATE() AND data_appuntamento <= DATE_ADD(CURDATE(), INTERVAL 35 DAY) ORDER BY data_appuntamento, ora_appuntamento");
+$stmt = $conn->prepare("SELECT id, nome, telefono, data_appuntamento, ora_appuntamento, servizio FROM prenotazioni WHERE stato='accettato' AND data_appuntamento >= CURDATE() AND data_appuntamento <= DATE_ADD(CURDATE(), INTERVAL 35 DAY) ORDER BY data_appuntamento, ora_appuntamento");
 if ($stmt) { $stmt->execute(); $prenotazioni_agenda_json = $stmt->get_result()->fetch_all(MYSQLI_ASSOC); }
+
+// --- Modalita conferma prenotazioni (auto | approval) ---
+$booking_mode = 'auto';
+$res_bm = @$conn->query("SELECT config_value FROM admin_config WHERE config_key='booking_mode'");
+if ($res_bm && ($r_bm = $res_bm->fetch_assoc()) && in_array($r_bm['config_value'], ['auto','approval'], true)) {
+    $booking_mode = $r_bm['config_value'];
+}
 
 // --- ORARI DI APERTURA per tools ---
 $opening_hours_data = [];
