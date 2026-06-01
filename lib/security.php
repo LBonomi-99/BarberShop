@@ -12,10 +12,17 @@ function normalizePhone(string $raw): string {
     return $p;
 }
 
-/** IP del client (tiene conto del proxy su shared hosting). */
+/**
+ * IP del client per rate-limit / lockout login.
+ * Usa SOLO REMOTE_ADDR: e l'IP della connessione TCP, non falsificabile.
+ * X-Forwarded-For e scrivibile dal client -> usarlo permetterebbe di
+ * cambiare "ident" a ogni richiesta e aggirare rate-limit e lockout.
+ * Tophost serve via Apache diretto: REMOTE_ADDR = client reale.
+ * (Dietro Cloudflare/proxy fidato: sostituire con CF-Connecting-IP o
+ *  l'ultimo hop di XFF validato contro l'IP del proxy.)
+ */
 function client_ip(): string {
-    $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-    if (strpos($ip, ',') !== false) $ip = trim(explode(',', $ip)[0]);
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     return substr($ip, 0, 45);
 }
 

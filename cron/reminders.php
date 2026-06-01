@@ -8,6 +8,7 @@
  * per rispettare max_execution_time (~30s) di Tophost: il pinger orario svuota la coda.
  */
 date_default_timezone_set('Europe/Rome');
+require_once __DIR__ . '/../lib/db.php';
 require_once __DIR__ . '/../lib/mailer.php';
 
 // --- Auth: token segreto (query ?key= o argomento CLI) ---
@@ -18,8 +19,8 @@ if (!defined('CRON_TOKEN') || !hash_equals(CRON_TOKEN, (string)$token)) {
     exit;
 }
 
-$conn = new mysqli('localhost', 'root', '', 'barber_shop');
-if ($conn->connect_error) { http_response_code(500); echo "db error\n"; exit; }
+$conn = db_connect();
+if (!$conn) { http_response_code(500); echo "db error\n"; exit; }
 
 $start   = time();
 $domani  = date('Y-m-d', strtotime('+1 day'));

@@ -2,12 +2,13 @@
 session_start();
 date_default_timezone_set('Europe/Rome');
 
+require_once __DIR__ . '/lib/db.php';
 require_once __DIR__ . '/lib/availability.php';
 require_once __DIR__ . '/lib/mailer.php';
 require_once __DIR__ . '/lib/security.php';
 
-$conn = new mysqli('localhost', 'root', '', 'barber_shop');
-if ($conn->connect_error) { header("Location: index.php?status=error#prenota"); exit; }
+$conn = db_connect();
+if (!$conn) { header("Location: index.php?status=error#prenota"); exit; }
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") { header("Location: index.php"); exit; }
 
