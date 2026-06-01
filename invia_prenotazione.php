@@ -83,9 +83,12 @@ try {
 
     $conn->commit();
 } catch (mysqli_sql_exception $e) {
+    // NB: leggere il codice PRIMA del rollback. rollback() esegue una query
+    // sulla connessione e azzera $conn->errno -> il check 1062 leggerebbe 0.
+    $code = $e->getCode();
     $conn->rollback();
     // 1062 = slot appena occupato da una richiesta concorrente
-    $dest = ($conn->errno === 1062) ? 'error_slot' : 'error';
+    $dest = ($code === 1062) ? 'error_slot' : 'error';
     header("Location: index.php?status=$dest#prenota"); exit;
 } catch (Exception $e) {
     $conn->rollback();

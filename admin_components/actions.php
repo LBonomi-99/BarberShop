@@ -30,20 +30,32 @@ if (isset($_GET['id']) && (isset($_GET['action']) || isset($_GET['track']))) {
             $pren = $q->get_result()->fetch_assoc();
             $stato_prec = $pren['stato'] ?? '';
 
-            // Ripristino da storico: lo slot era stato liberato, va ri-occupato.
-            // Se nel frattempo l'ha preso un altro, non ripristinare.
             if ($stato == 'in_attesa') {
-                if ($pren && !occupaSlot($conn, $id, $pren['data_appuntamento'], $pren['ora_appuntamento'])) {
-                    header("Location: admin.php?current_tab=$active_tab&msg=slot_taken"); exit;
+                // Ripristino da storico: ri-occupa lo slot e cambia stato in modo
+                // ATOMICO. Se occupaSlot e l'UPDATE non sono in transazione e l'UPDATE
+                // fallisce, lo slot resterebbe "fantasma" occupato (bloccato online ma
+                // prenotazione ancora rifiutata, mai liberabile). Se lo slot e stato
+                // preso da un altro nel frattempo, non ripristinare.
+                $conn->begin_transaction();
+                try {
+                    if (!$pren || !occupaSlot($conn, $id, $pren['data_appuntamento'], $pren['ora_appuntamento'])) {
+                        $conn->rollback();
+                        header("Location: admin.php?current_tab=$active_tab&msg=slot_taken"); exit;
+                    }
+                    $stmt = $conn->prepare("UPDATE prenotazioni SET stato='in_attesa' WHERE id=?");
+                    $stmt->bind_param("i", $id); $stmt->execute();
+                    $conn->commit();
+                } catch (mysqli_sql_exception $e) {
+                    $conn->rollback();
+                    header("Location: admin.php?current_tab=$active_tab&msg=error"); exit;
                 }
+            } else {
+                $stmt = $conn->prepare("UPDATE prenotazioni SET stato=? WHERE id=?");
+                $stmt->bind_param("si", $stato, $id);
+                $stmt->execute();
+                // Rifiuto/annullo: libera lo slot (torna disponibile online).
+                if ($stato == 'rifiutato') liberaSlot($conn, $id);
             }
-
-            $stmt = $conn->prepare("UPDATE prenotazioni SET stato=? WHERE id=?");
-            $stmt->bind_param("si", $stato, $id);
-            $stmt->execute();
-
-            // Rifiuto/annullo: libera lo slot (torna disponibile online).
-            if ($stato == 'rifiutato') liberaSlot($conn, $id);
 
             if ($stato == 'accettato') aggiungiLog($conn, $id, "Accettato");
             if ($stato == 'rifiutato') aggiungiLog($conn, $id, "Rifiutato");
