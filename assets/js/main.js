@@ -104,6 +104,21 @@ document.getElementById('bookingForm').addEventListener('submit', function (e) {
         phoneInput.style.borderColor = '';
     }
 
+    // Email
+    var emailInput = document.getElementById('email');
+    var emailError = document.getElementById('emailError');
+    if (emailInput) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value.trim())) {
+            e.preventDefault();
+            emailError.style.display = 'block';
+            emailInput.style.borderColor = '#c0392b';
+            valid = false;
+        } else {
+            emailError.style.display = 'none';
+            emailInput.style.borderColor = '';
+        }
+    }
+
     // Parole non consentite
     var descInput = document.getElementById('service-desc');
     var textError = document.getElementById('textError');
@@ -131,10 +146,12 @@ document.getElementById('bookingForm').addEventListener('submit', function (e) {
     var form = document.getElementById('bookingForm');
     if (!form) return;
 
-    if (status === 'success') {
+    if (status === 'success' || status === 'success_confirmed') {
         var msg = document.createElement('div');
         msg.className = 'success-message';
-        msg.innerHTML = '<i class="fas fa-check-circle"></i> Richiesta inviata! Ti confermeremo a breve.';
+        msg.innerHTML = status === 'success_confirmed'
+            ? '<i class="fas fa-check-circle"></i> Prenotazione confermata! Ti abbiamo inviato una email.'
+            : '<i class="fas fa-check-circle"></i> Richiesta inviata! Ti confermeremo a breve.';
         form.parentNode.insertBefore(msg, form);
         msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
         window.history.replaceState({}, '', window.location.pathname + '#prenota');
@@ -146,6 +163,11 @@ document.getElementById('bookingForm').addEventListener('submit', function (e) {
         'error_badwords': 'Il testo contiene parole non consentite.',
         'error_name_len': 'Nome troppo lungo (max 40 caratteri).',
         'error_limit':    'Hai raggiunto il massimo di prenotazioni giornaliere (2) per questo numero.',
+        'error_email':    'Inserisci un indirizzo email valido.',
+        'error_phone':    'Inserisci un numero di cellulare valido (Es. 333...).',
+        'error_slot':     'Spiacenti, questo orario &egrave; appena stato occupato. Scegline un altro.',
+        'error_captcha':  'Verifica anti-bot non superata. Riprova.',
+        'error_rate':     'Troppe richieste. Attendi qualche minuto e riprova.',
         'error':          'Si &egrave; verificato un errore. Riprova.'
     };
 

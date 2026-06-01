@@ -15,6 +15,7 @@ $services = $conn->query("SELECT sl.*, sc.name AS cat_name FROM services_list sl
         </div>
         <form method="POST" action="admin.php?current_tab=cms">
             <input type="hidden" name="action" value="update_chi_siamo">
+            <?php echo csrf_tag(); ?>
             <div class="form-group">
                 <label>Testo descrizione (visibile in home page)</label>
                 <textarea name="content_text" rows="8" style="width:100%;padding:14px;border:1px solid #e0e0e0;border-radius:8px;font-family:inherit;line-height:1.6;resize:vertical;font-size:0.94rem;"><?php echo htmlspecialchars($chi_siamo_text); ?></textarea>
@@ -33,6 +34,7 @@ $services = $conn->query("SELECT sl.*, sc.name AS cat_name FROM services_list sl
         </div>
         <form method="POST" action="admin.php?current_tab=cms" style="max-width:440px;">
             <input type="hidden" name="action" value="update_social">
+            <?php echo csrf_tag(); ?>
             <div class="form-group">
                 <label><i class="fab fa-instagram" style="color:#C13584;margin-right:6px;"></i> Instagram (URL completo)</label>
                 <input type="url" name="social_instagram" value="<?php echo htmlspecialchars($social_instagram); ?>" placeholder="https://instagram.com/tuoprofilo">
@@ -58,7 +60,7 @@ $services = $conn->query("SELECT sl.*, sc.name AS cat_name FROM services_list sl
             <?php foreach ($service_categories as $cat): ?>
             <span style="background:#f5f5f5;padding:6px 12px;border-radius:20px;border:1px solid #e0e0e0;font-size:0.9rem;display:flex;align-items:center;gap:8px;">
                 <?php echo htmlspecialchars($cat['name']); ?>
-                <a href="admin.php?action=delete_category&id=<?php echo (int)$cat['id']; ?>&current_tab=cms"
+                <a href="admin.php?action=delete_category&id=<?php echo (int)$cat['id']; ?>&current_tab=cms<?php echo csrf_q(); ?>"
                    onclick="return confirm('Eliminare la categoria \'<?php echo htmlspecialchars(addslashes($cat['name'])); ?>\'? (solo se non ha servizi associati)')"
                    style="color:var(--red);text-decoration:none;font-weight:700;line-height:1;font-size:1rem;">&times;</a>
             </span>
@@ -70,6 +72,7 @@ $services = $conn->query("SELECT sl.*, sc.name AS cat_name FROM services_list sl
 
         <form method="POST" action="admin.php?current_tab=cms" style="display:flex;gap:10px;align-items:flex-end;max-width:380px;">
             <input type="hidden" name="action" value="add_category">
+            <?php echo csrf_tag(); ?>
             <div class="form-group" style="flex:1;margin:0;">
                 <label>Nuova categoria</label>
                 <input type="text" name="category_name" placeholder="Es. Trattamenti" required>
@@ -108,7 +111,7 @@ $services = $conn->query("SELECT sl.*, sc.name AS cat_name FROM services_list sl
                     </td>
                     <td style="padding:10px;font-variant-numeric:tabular-nums;">€&nbsp;<?php echo number_format((float)$srv['price'], 2, ',', '.'); ?></td>
                     <td style="padding:10px;text-align:right;">
-                        <a href="admin.php?delete_service=<?php echo (int)$srv['id']; ?>&current_tab=cms"
+                        <a href="admin.php?delete_service=<?php echo (int)$srv['id']; ?>&current_tab=cms<?php echo csrf_q(); ?>"
                            onclick="return confirm('Eliminare questo servizio?')"
                            style="color:var(--red);text-decoration:none;font-size:0.88rem;">
                             <i class="fas fa-trash"></i>
@@ -126,6 +129,7 @@ $services = $conn->query("SELECT sl.*, sc.name AS cat_name FROM services_list sl
             <h4 style="margin:0 0 16px;font-size:0.95rem;">Aggiungi Nuovo Servizio</h4>
             <form method="POST" action="admin.php?current_tab=cms" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
                 <input type="hidden" name="action" value="add_service">
+                <?php echo csrf_tag(); ?>
                 <div class="form-group">
                     <label>Categoria</label>
                     <select name="category">

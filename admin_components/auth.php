@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../lib/security.php';
+
 if (isset($_GET['logout'])) {
     session_destroy();
     header("Location: admin.php"); exit;
@@ -6,25 +8,41 @@ if (isset($_GET['logout'])) {
 
 function checkAdminPassword($conn, $inputPass) {
     $stmt = @$conn->prepare("SELECT config_value FROM admin_config WHERE config_key = 'admin_password'");
-    if (!$stmt) {
-        return ($inputPass === 'Matteo2025');
-    }
+    if (!$stmt) return false;
     $stmt->execute();
     $result = $stmt->get_result()->fetch_assoc();
+
     if (!$result) {
-        $hash = password_hash('Matteo2025', PASSWORD_BCRYPT);
-        $ins = $conn->prepare("INSERT INTO admin_config (config_key, config_value) VALUES ('admin_password', ?)");
+        // Primo avvio: nessuna password salvata => seed dalla default di config (non in chiaro nel codice).
+        $default = defined('ADMIN_DEFAULT_PASSWORD') ? ADMIN_DEFAULT_PASSWORD : '';
+        if ($default === '') return false;
+        $hash = password_hash($default, PASSWORD_BCRYPT);
+        $ins  = $conn->prepare("INSERT INTO admin_config (config_key, config_value) VALUES ('admin_password', ?)");
         if ($ins) { $ins->bind_param("s", $hash); $ins->execute(); }
-        return ($inputPass === 'Matteo2025');
+        return password_verify((string)$inputPass, $hash);
     }
-    return password_verify($inputPass, $result['config_value']);
+    return password_verify((string)$inputPass, $result['config_value']);
 }
 
-if (isset($_POST['login']) && checkAdminPassword($conn, $_POST['pass'])) {
-    $_SESSION['logged_in'] = true;
+// --- Login con rate-limit per IP ---
+$login_error = '';
+if (isset($_POST['login'])) {
+    $ip = client_ip();
+    if (rate_too_many($conn, 'login', $ip, 8, 900)) {           // 8 tentativi / 15 min
+        $login_error = 'Troppi tentativi. Riprova tra qualche minuto.';
+    } elseif (checkAdminPassword($conn, $_POST['pass'] ?? '')) {
+        session_regenerate_id(true);
+        $_SESSION['logged_in'] = true;
+    } else {
+        rate_hit($conn, 'login', $ip);
+        $login_error = 'Password errata.';
+    }
 }
 
 if (!isset($_SESSION['logged_in'])) {
+    $err_html = $login_error
+        ? '<p style="color:#c0392b;font-size:0.88rem;margin-bottom:14px;">' . htmlspecialchars($login_error) . '</p>'
+        : '';
     echo '<!DOCTYPE html>
 <html lang="it">
 <head>
@@ -49,7 +67,7 @@ button:active{transform:scale(0.98)}
 <div class="login-box">
 <h2>BarberAdmin</h2>
 <p class="sub">Accesso riservato</p>
-<form method="POST">
+' . $err_html . '<form method="POST">
 <input type="password" name="pass" placeholder="Password" autofocus>
 <button type="submit" name="login">ENTRA</button>
 </form>

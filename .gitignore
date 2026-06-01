@@ -1,0 +1,16 @@
+# Segreti — mai versionare
+config.local.php
+
+# Log email locali
+mail_log/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Tooling Claude Code (non parte dell'app)
+.claude/
+.agents/
+skills-lock.json

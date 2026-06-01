@@ -45,6 +45,9 @@ if ($res_social) {
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
+    <?php if (defined('TURNSTILE_SITEKEY') && TURNSTILE_SITEKEY !== ''): ?>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <?php endif; ?>
 </head>
 <body>
 
@@ -177,6 +180,16 @@ if ($res_social) {
                     <input type="tel" id="phone" name="phone" placeholder="Es. 333 1234567" required aria-required="true" aria-describedby="phoneError">
                     <div id="phoneError" class="error-message"><i class="fas fa-exclamation-triangle"></i> Inserisci un numero di cellulare valido (Es. 333...).</div>
                 </div>
+
+                <div class="form-group">
+                    <label for="email">Email <span style="font-weight:400;color:#999;">(per la conferma)</span></label>
+                    <input type="email" id="email" name="email" placeholder="nome@email.it" required aria-required="true" aria-describedby="emailError">
+                    <div id="emailError" class="error-message"><i class="fas fa-exclamation-triangle"></i> Inserisci un indirizzo email valido.</div>
+                </div>
+
+                <?php if (defined('TURNSTILE_SITEKEY') && TURNSTILE_SITEKEY !== ''): ?>
+                <div class="cf-turnstile" data-sitekey="<?php echo htmlspecialchars(TURNSTILE_SITEKEY); ?>" style="margin-bottom:16px;"></div>
+                <?php endif; ?>
 
                 <button type="submit" class="btn-cta" style="width:100%;border:none;">Invia Richiesta</button>
             </form>

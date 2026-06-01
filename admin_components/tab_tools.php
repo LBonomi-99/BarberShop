@@ -1,5 +1,6 @@
 <?php
 $day_names = [0=>'Domenica',1=>'Lunedì',2=>'Martedì',3=>'Mercoledì',4=>'Giovedì',5=>'Venerdì',6=>'Sabato'];
+$prefill_date = (isset($_GET['new_date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['new_date'])) ? $_GET['new_date'] : '';
 ?>
 
 <div id="tools" class="tab-content <?php echo $active_tab=='tools'?'active':''; ?>">
@@ -11,6 +12,7 @@ $day_names = [0=>'Domenica',1=>'Lunedì',2=>'Martedì',3=>'Mercoledì',4=>'Giove
         </div>
         <form method="POST" action="admin.php?current_tab=tools">
             <input type="hidden" name="action" value="update_opening_hours">
+            <?php echo csrf_tag(); ?>
             <table class="hours-table">
                 <thead>
                     <tr>
@@ -66,6 +68,7 @@ $day_names = [0=>'Domenica',1=>'Lunedì',2=>'Martedì',3=>'Mercoledì',4=>'Giove
         </div>
         <form method="POST" action="admin.php?current_tab=tools" style="max-width:380px;">
             <input type="hidden" name="action" value="change_password">
+            <?php echo csrf_tag(); ?>
             <div class="form-group">
                 <label>Password attuale</label>
                 <input type="password" name="old_password" required autocomplete="current-password">
@@ -84,6 +87,31 @@ $day_names = [0=>'Domenica',1=>'Lunedì',2=>'Martedì',3=>'Mercoledì',4=>'Giove
         </form>
     </div>
 
+    <!-- MODALITA CONFERMA PRENOTAZIONI -->
+    <div class="card" style="border-left:5px solid var(--accent);margin-top:20px;">
+        <div class="card-header">
+            <h3 class="client-name"><i class="fas fa-bolt"></i> Conferma Prenotazioni Online</h3>
+        </div>
+        <p style="font-size:0.9rem;color:var(--gray);margin:0 0 14px;">
+            Decidi cosa succede quando un cliente prenota dal sito.
+        </p>
+        <form method="POST" action="admin.php?current_tab=tools">
+            <input type="hidden" name="action" value="update_booking_mode">
+            <?php echo csrf_tag(); ?>
+            <label class="mode-option <?php echo $booking_mode==='auto'?'selected':''; ?>">
+                <input type="radio" name="booking_mode" value="auto" <?php echo $booking_mode==='auto'?'checked':''; ?> style="width:auto;">
+                <span><strong>Automatica</strong> — la prenotazione è confermata subito e il cliente riceve l'email di conferma. Lo slot viene occupato all'istante.</span>
+            </label>
+            <label class="mode-option <?php echo $booking_mode==='approval'?'selected':''; ?>">
+                <input type="radio" name="booking_mode" value="approval" <?php echo $booking_mode==='approval'?'checked':''; ?> style="width:auto;">
+                <span><strong>Su approvazione</strong> — la richiesta arriva in "Da Confermare" e la confermi tu manualmente.</span>
+            </label>
+            <button type="submit" class="btn btn-green" style="max-width:200px;margin-top:6px;">
+                <i class="fas fa-save"></i> Salva Modalità
+            </button>
+        </form>
+    </div>
+
     <!-- INSERIMENTO MANUALE -->
     <div class="card" style="margin-top:20px;">
         <div class="card-header" style="cursor:pointer;" onclick="toggleManual()">
@@ -93,12 +121,14 @@ $day_names = [0=>'Domenica',1=>'Lunedì',2=>'Martedì',3=>'Mercoledì',4=>'Giove
         <div id="manualForm" style="display:none;padding-top:12px;">
             <form method="POST" action="admin.php?current_tab=tools">
                 <input type="hidden" name="manual_booking" value="1">
+                <?php echo csrf_tag(); ?>
                 <div class="form-group"><label>Nome cliente</label><input type="text" name="nome" required></div>
                 <div class="form-group"><label>Telefono</label><input type="text" name="telefono" required></div>
+                <div class="form-group"><label>Email <span style="font-weight:400;color:#999;">(opzionale, per conferma)</span></label><input type="email" name="email"></div>
                 <div class="form-group">
                     <label>Data e Ora</label>
                     <div style="display:flex;gap:10px;">
-                        <input type="date" name="data" value="<?php echo date('Y-m-d'); ?>" required style="flex:1;">
+                        <input type="date" name="data" value="<?php echo htmlspecialchars($prefill_date ?: date('Y-m-d')); ?>" required style="flex:1;">
                         <select name="ora" style="flex:1;">
                             <?php $s=strtotime("08:00"); $e=strtotime("19:30"); while($s<=$e){ echo "<option>".date("H:i",$s)."</option>"; $s=strtotime('+30 mins',$s); } ?>
                         </select>
@@ -118,6 +148,7 @@ $day_names = [0=>'Domenica',1=>'Lunedì',2=>'Martedì',3=>'Mercoledì',4=>'Giove
             <h3 class="client-name"><i class="fas fa-ban"></i> Blocca Orari / Ferie</h3>
         </div>
         <form method="POST" action="admin.php?current_tab=tools">
+            <?php echo csrf_tag(); ?>
             <div class="form-group"><label>Giorno</label><input type="date" name="data_blocco" required></div>
             <div class="form-group">
                 <label>Tipo blocco</label>
@@ -146,7 +177,7 @@ $day_names = [0=>'Domenica',1=>'Lunedì',2=>'Martedì',3=>'Mercoledì',4=>'Giove
                 <?php while ($row = $slot_full->fetch_assoc()): ?>
                 <span style="background:#fff;padding:5px 10px;border-radius:6px;border:1px solid #e0e0e0;font-size:0.88rem;display:flex;align-items:center;gap:6px;">
                     <?php echo date('d/m', strtotime($row['data_blocco']))." ".$row['ora_blocco']; ?>
-                    <a href="admin.php?delete_block=<?php echo $row['id']; ?>&current_tab=tools"
+                    <a href="admin.php?delete_block=<?php echo $row['id']; ?>&current_tab=tools<?php echo csrf_q(); ?>"
                        style="color:var(--red);text-decoration:none;font-weight:700;line-height:1;">&times;</a>
                 </span>
                 <?php endwhile; ?>
@@ -163,7 +194,7 @@ $day_names = [0=>'Domenica',1=>'Lunedì',2=>'Martedì',3=>'Mercoledì',4=>'Giove
         <p style="font-size:0.9rem;color:var(--gray);margin:0 0 14px;">
             Elimina le prenotazioni con data superiore a 1 anno per conformità GDPR.
         </p>
-        <a href="admin.php?action=clean_old&current_tab=tools"
+        <a href="admin.php?action=clean_old&current_tab=tools<?php echo csrf_q(); ?>"
            class="btn btn-red"
            style="max-width:260px;"
            onclick="return confirm('Eliminare definitivamente i dati storici? L\'operazione è irreversibile.')">
@@ -196,4 +227,18 @@ function toggleBlockInputs() {
     document.getElementById('endDateGroup').style.display   = (type === 'range')  ? 'block' : 'none';
     document.getElementById('timeSelectGroup').style.display = (type === 'single') ? 'block' : 'none';
 }
+
+// Evidenzia l'opzione modalità conferma selezionata
+document.querySelectorAll('.mode-option input[type="radio"]').forEach(function (r) {
+    r.addEventListener('change', function () {
+        document.querySelectorAll('.mode-option').forEach(function (l) { l.classList.remove('selected'); });
+        this.closest('.mode-option').classList.add('selected');
+    });
+});
+
+// Se arrivo dal calendario con ?new_date=..., apri il form manuale già prefillato
+<?php if ($prefill_date): ?>
+toggleManual();
+document.getElementById('manualForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+<?php endif; ?>
 </script>
